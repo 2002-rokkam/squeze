@@ -16,8 +16,8 @@
   ],
   "main": "./dist/extension.cjs",
   "bin": {
-    "squeze": "./dist/cli.cjs",
-    "reposqueeze-v2": "./dist/cli.cjs"
+    "squeze": "dist/cli.cjs",
+    "reposqueeze-v2": "dist/cli.cjs"
   },
   "files": [
     "dist/*.cjs",
