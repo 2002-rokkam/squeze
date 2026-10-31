@@ -79,6 +79,10 @@
         "title": "RepoSqueeze V2: Show Repository Map"
       },
       {
+        "command": "reposqueeze-v2.graph",
+        "title": "RepoSqueeze V2: Show Code Graph"
+      },
+      {
         "command": "reposqueeze-v2.setup",
         "title": "RepoSqueeze V2: Install Copilot Instructions"
       }
@@ -178,6 +182,42 @@
             },
             "query": {
               "type": "string"
+            },
+            "budget": {
+              "type": "integer",
+              "minimum": 256,
+              "maximum": 32000
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "reposqueeze_v2_graph",
+        "displayName": "RepoSqueeze V2 Code Graph",
+        "modelDescription": "Code graph of the repository: subsystems, dependencies, call paths, change impact. Cheaper than reading files.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "squeezeGraph",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["overview", "neighbors", "path", "impact", "mermaid"],
+              "description": "Default overview."
+            },
+            "target": {
+              "type": "string",
+              "description": "File, path suffix or symbol."
+            },
+            "to": {
+              "type": "string",
+              "description": "Path end point."
+            },
+            "depth": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6
             },
             "budget": {
               "type": "integer",

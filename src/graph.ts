@@ -73,6 +73,8 @@ export interface GraphParts {
 export interface SubsystemInfo {
   id: number;
   name: string;
+  /** Directory holding most of the files ('' when the files are spread out). */
+  directory: string;
   /** File ids, most important first. */
   files: number[];
   definitions: number;
@@ -299,6 +301,11 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Code
   });
 }
 
+const sameDirectory = (a: string, b: string) => a.slice(0, a.lastIndexOf('/')) === b.slice(0, b.lastIndexOf('/'));
+const PACKAGE_IS_DIRECTORY = new Set(['go', 'java', 'kotlin', 'scala', 'c_sharp']);
+/** Long compound identifiers (`packEvidence`, `parse_config`) rarely collide by accident. */
+const isDistinctive = (name: string) => name.length >= 8 && (name.includes('_') || /[a-z][A-Z]/.test(name)) && !name.startsWith('_');
+
 /** Name-based reference edges: a definition (or file) mentions a name that another definition declares. */
 function addReferenceEdges(files: FileInfo[], importTargets: Map<number, number>[], columns: Columns, stats: GraphStats): void {
   // name -> one definer per file (first definition with that name), as the repository map does.
@@ -361,9 +368,13 @@ function addReferenceEdges(files: FileInfo[], importTargets: Map<number, number>
         const base = role * nameMultiplier(name) * ambiguity;
         for (const definer of list) {
           if (definer.node === node) continue;
-          // An import of the defining file corroborates the match; otherwise very common names are damped.
-          const weight = base * (imported.has(definer.file) ? 2 : commonness(name));
+          const corroborated = imported.has(definer.file);
           if (definer.file === g && definer.node === g) continue;
+          // Across directories a bare name match is only trusted when an import backs it or the name is distinctive;
+          // in languages where a package is a directory, same-directory matches count too.
+          const packageMates = PACKAGE_IS_DIRECTORY.has(info.language) && sameDirectory(info.path, files[definer.file].path);
+          if (!corroborated && definer.file !== g && !packageMates && !(list.length === 1 && isDistinctive(name))) continue;
+          const weight = base * (corroborated ? 2 : commonness(name));
           if (weight >= MIN_REFERENCE_WEIGHT) scored.set(definer.node, (scored.get(definer.node) ?? 0) + weight);
         }
       }
@@ -414,6 +425,9 @@ export class CodeGraph {
   readonly outDegree: Uint32Array;
   /** Import cycles (strongly connected sets of files), larger first. */
   readonly cycles: number[][];
+  /** File -> file import edges only (the syntactic, EXTRACTED part of the file graph). */
+  readonly importOut: Csr;
+  readonly importIn: Csr;
 
   constructor(parts: GraphParts) {
     this.revision = parts.revision;
@@ -448,8 +462,10 @@ export class CodeGraph {
     const communities = this.detectCommunities();
     this.community = communities.community;
     this.subsystems = communities.subsystems;
-    const importsOnly = this.importSubgraph();
-    this.cycles = stronglyConnected(importsOnly);
+    const imports = this.importSubgraph();
+    this.importOut = imports.out;
+    this.importIn = imports.into;
+    this.cycles = stronglyConnected(imports.out);
   }
 
   /** Owning file of a node (the node itself for files); -1 for external packages. */
@@ -496,7 +512,7 @@ export class CodeGraph {
     return { out, into, mask };
   }
 
-  private importSubgraph(): Csr {
+  private importSubgraph(): { out: Csr; into: Csr } {
     const from: number[] = [];
     const to: number[] = [];
     for (let e = 0; e < this.edgeFrom.length; e++) {
@@ -504,7 +520,8 @@ export class CodeGraph {
       from.push(this.edgeFrom[e]);
       to.push(this.edgeTo[e]);
     }
-    return buildCsr(this.fileCount, from, to, from.map(() => 1));
+    const weight = from.map(() => 1);
+    return { out: buildCsr(this.fileCount, from, to, weight), into: buildCsr(this.fileCount, to, from, weight) };
   }
 
   private detectCommunities(): { community: Int32Array; subsystems: SubsystemInfo[] } {
@@ -709,7 +726,7 @@ function nameCommunities(graph: CodeGraph, raw: Int32Array): { community: Int32A
     used.set(name, seen + 1);
     if (seen) name += ` #${seen + 1}`;
     const files = [...members].sort((a, b) => graph.rank[b] - graph.rank[a] || a - b);
-    return { id, name, files, definitions: members.reduce((sum, f) => sum + (defsOf.get(f)?.length ?? 0), 0) };
+    return { id, name, directory, files, definitions: members.reduce((sum, f) => sum + (defsOf.get(f)?.length ?? 0), 0) };
   });
   return { community, subsystems };
 }

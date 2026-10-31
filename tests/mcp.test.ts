@@ -16,7 +16,7 @@ async function connect(t: test.TestContext, tools?: string) {
 test('built MCP server (default tools): handshake, discovery, context, expansion, map modes and errors', async t => {
   const client = await connect(t);
   const names = (await client.listTools()).tools.map(tool => tool.name).sort();
-  assert.deepEqual(names, ['reposqueeze_v2_context', 'reposqueeze_v2_expand', 'reposqueeze_v2_map']);
+  assert.deepEqual(names, ['reposqueeze_v2_context', 'reposqueeze_v2_expand', 'reposqueeze_v2_graph', 'reposqueeze_v2_map']);
   const pack = await client.callTool({ name: 'reposqueeze_v2_context', arguments: { query: 'contextPack budget', budget: 512 } });
   assert(!pack.isError);
   assert.match(JSON.stringify(pack.content), /reposqueeze/i);
@@ -31,11 +31,16 @@ test('built MCP server (default tools): handshake, discovery, context, expansion
   const symbols = await client.callTool({ name: 'reposqueeze_v2_map', arguments: { query: 'checkBudget' } });
   assert(!symbols.isError);
   assert.match(JSON.stringify(symbols.content), /src\/tokens\.ts/);
+  const graph = await client.callTool({ name: 'reposqueeze_v2_graph', arguments: { mode: 'neighbors', target: 'src/tokens.ts', budget: 512 } });
+  assert(!graph.isError);
+  assert.match(JSON.stringify(graph.content), /src\/tokens\.ts/);
+  const noTarget = await client.callTool({ name: 'reposqueeze_v2_graph', arguments: { mode: 'impact' } });
+  assert.equal(noTarget.isError, true);
 });
 
 test('built MCP server (--tools all) also exposes the pre-context compactors', async t => {
   const client = await connect(t, 'all');
-  assert.equal((await client.listTools()).tools.length, 5);
+  assert.equal((await client.listTools()).tools.length, 6);
   const json = await client.callTool({ name: 'reposqueeze_v2_json', arguments: { text: '{ "x": 1 }' } });
   assert(!json.isError);
   const log = await client.callTool({ name: 'reposqueeze_v2_compact', arguments: { text: 'ok\n'.repeat(400) + 'ERROR boom\n', budget: 256 } });

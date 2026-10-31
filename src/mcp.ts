@@ -7,10 +7,11 @@ import { compactJson } from './structured.js';
 import { Engine } from './engine.js';
 import { findSymbols, renderOutline, renderSymbols } from './symbols.js';
 import { checkBudget } from './tokens.js';
+import { runGraph } from './graph-store.js';
 
 export interface ServeOptions {
   semanticModel?: string;
-  /** 'core' (default): context, expand, map. 'all' adds compact and json, which only save tokens when the text has not yet entered the model's context. */
+  /** 'core' (default): context, expand, map, graph. 'all' adds compact and json, which only save tokens when the text has not yet entered the model's context. */
   tools?: 'core' | 'all';
   features?: string;
 }
@@ -67,6 +68,21 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
       const snapshot = await repo.snapshot(query ?? '__repository_map__');
       return result(query ? renderSymbols(findSymbols(snapshot, query), tokensAllowed) : repositoryMap(snapshot, tokensAllowed));
     },
+  );
+  server.registerTool(
+    'reposqueeze_v2_graph',
+    {
+      description: 'Code graph of the repository: subsystems, dependencies, call paths, change impact. Cheaper than reading files.',
+      inputSchema: {
+        mode: z.enum(['overview', 'neighbors', 'path', 'impact', 'mermaid']).optional().describe('Default overview.'),
+        target: z.string().optional().describe('File, path suffix or symbol.'),
+        to: z.string().optional().describe('Path end point.'),
+        depth: z.number().optional(),
+        budget,
+      },
+      annotations,
+    },
+    async ({ mode, target, to, depth, budget }) => result(await runGraph(repo, { mode, target, to, depth, budget: limit(budget, 1500) })),
   );
   if (tools === 'all') {
     server.registerTool(

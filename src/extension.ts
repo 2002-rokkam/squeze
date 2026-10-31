@@ -3,8 +3,10 @@ import { Engine } from './engine.js';
 import { repositoryMap } from './context.js';
 import { INSTRUCTIONS } from './instructions.js';
 import { findSymbols, renderOutline, renderSymbols } from './symbols.js';
+import { runGraph, type GraphView } from './graph-store.js';
 
 interface ContextInput {query:string;budget?:number}
+interface GraphInput {mode?:GraphView;target?:string;to?:string;depth?:number;budget?:number}
 interface ExpandInput {path:string;start:number;end:number;budget?:number}
 interface MapInput {path?:string;query?:string;budget?:number}
 export function activate(context: vscode.ExtensionContext) {
@@ -35,6 +37,14 @@ export function activate(context: vscode.ExtensionContext) {
   }));
   context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.map',async () => {
     try { await show(repositoryMap(await getRepo().snapshot('__repository_map__'),defaultBudget())); } catch(e) {vscode.window.showErrorMessage(String(e));}
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.graph',async () => {
+    try {
+      const html = await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'RepoSqueeze V2: building code graph'},() => runGraph(getRepo(),{mode:'html'}));
+      // The page carries its own strict CSP (no remote content); scripts are limited to its inline hash.
+      const panel = vscode.window.createWebviewPanel('reposqueezeV2Graph','RepoSqueeze V2: Code Graph',vscode.ViewColumn.Beside,{enableScripts:true,retainContextWhenHidden:false,localResourceRoots:[]});
+      panel.webview.html = html;
+    } catch(e) {vscode.window.showErrorMessage(String(e));}
   }));
   context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.setup',async () => {
     try {
@@ -79,6 +89,15 @@ export function activate(context: vscode.ExtensionContext) {
         const snapshot = await repo.snapshot(query ?? '__repository_map__');
         text = query ? renderSymbols(findSymbols(snapshot,query),limit) : repositoryMap(snapshot,limit);
       }
+      if (token.isCancellationRequested) throw new vscode.CancellationError();
+      return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(text)]);
+    }
+  }));
+  context.subscriptions.push(vscode.lm.registerTool<GraphInput>('reposqueeze_v2_graph',{
+    async invoke(options,token) {
+      if (token.isCancellationRequested) throw new vscode.CancellationError();
+      const {mode,target,to,depth,budget} = options.input;
+      const text = await runGraph(getRepo(),{mode,target,to,depth,budget:budget ?? 1500});
       if (token.isCancellationRequested) throw new vscode.CancellationError();
       return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(text)]);
     }
