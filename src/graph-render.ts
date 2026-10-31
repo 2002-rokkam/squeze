@@ -55,7 +55,7 @@ function references(graph: CodeGraph) {
     const to: number[] = [];
     const counts = new Uint32Array(graph.nodeCount);
     for (let e = 0; e < graph.edgeFrom.length; e++) {
-      if (graph.edgeKind[e] !== 2) continue;
+      if (graph.edgeKind[e] !== 2 && graph.edgeKind[e] !== 4) continue;
       from.push(graph.edgeFrom[e]);
       to.push(graph.edgeTo[e]);
       counts[graph.edgeTo[e]]++;

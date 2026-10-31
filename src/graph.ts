@@ -14,10 +14,11 @@ import type { Snapshot, SourceFile } from './types.js';
  */
 
 export const GRAPH_FORMAT = 'reposqueeze-graph';
-export const GRAPH_VERSION = 1;
+// Bump whenever the graph's content changes for the same snapshot: cached graphs of another version are rebuilt.
+export const GRAPH_VERSION = 3;
 
 export const NODE_KINDS = ['file', 'def', 'external'] as const;
-export const EDGE_KINDS = ['imports', 'defines', 'references', 'contains'] as const;
+export const EDGE_KINDS = ['imports', 'defines', 'references', 'contains', 'calls'] as const;
 export const CONFIDENCES = ['EXTRACTED', 'INFERRED'] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
 export type EdgeKind = (typeof EDGE_KINDS)[number];
@@ -26,6 +27,10 @@ export type Confidence = (typeof CONFIDENCES)[number];
 const IMPORT_WEIGHT = 3;
 const MAX_REFERENCE_TARGETS = 24;
 const MIN_REFERENCE_WEIGHT = 0.04;
+/** A call site is `name(`. It becomes a call edge only when the name is a definition in this file or in an imported file. */
+const CALL_SITE = /\b([A-Za-z_$][\w$]*)\s*\(/g;
+const NOT_CALLS = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'function', 'def', 'func', 'fn', 'elif', 'with', 'sizeof', 'typeof', 'super', 'this', 'new', 'await', 'yield', 'assert', 'print', 'len', 'range', 'make', 'append', 'cap', 'delete', 'panic', 'require', 'import', 'export', 'and', 'or', 'not', 'in', 'is', 'lambda', 'pass', 'raise']);
+const MAX_CALL_TARGETS = 8;
 const MAX_DEFINERS = 40;
 const FREE_DEFINERS = 3;
 const COMMON_NAME_FILES = 8;
@@ -43,6 +48,7 @@ export interface GraphStats {
   externals: number;
   importEdges: number;
   referenceEdges: number;
+  callEdges: number;
   importStatements: number;
   importsResolved: number;
   importsExternal: number;
@@ -238,7 +244,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Code
   });
   const importTargets: Map<number, number>[] = files.map(() => new Map());
   const externalUsers = new Map<string, Set<number>>();
-  const stats: GraphStats = { files: files.length, definitions: definitionCount, externals: 0, importEdges: 0, referenceEdges: 0, importStatements: 0, importsResolved: 0, importsExternal: 0, importsUnresolved: 0, externalsOmitted: 0, languages };
+  const stats: GraphStats = { files: files.length, definitions: definitionCount, externals: 0, importEdges: 0, referenceEdges: 0, callEdges: 0, importStatements: 0, importsResolved: 0, importsExternal: 0, importsUnresolved: 0, externalsOmitted: 0, languages };
   const textOnly = new Set<string>();
   files.forEach((info, f) => {
     const source = info.source;
@@ -369,6 +375,31 @@ function addReferenceEdges(files: FileInfo[], importTargets: Map<number, number>
     for (const root of analysis.roots) if (!defChunks.has(root)) sources.push({ node: g, refs: root.refs, exclude: allDefRefs });
 
     const imported = importTargets[g];
+    // Calls: a definition's `name(` sites that resolve to a definition in this file or in an imported file.
+    info.defs.forEach((def, index) => {
+      const node = info.nodeOf.get(index);
+      if (node === undefined || !def.chunk.text) return;
+      const seen = new Set<string>();
+      const targets = new Map<number, { weight: number; exact: boolean }>();
+      for (const match of def.chunk.text.matchAll(CALL_SITE)) {
+        const name = match[1];
+        if (seen.has(name) || name === def.chunk.name || NOT_CALLS.has(name)) continue;
+        seen.add(name);
+        const list = definers.get(name);
+        if (!list || list.length > MAX_DEFINERS) continue;
+        const local = list.filter(definer => definer.file === g && definer.node !== node);
+        const backed = list.filter(definer => definer.file !== g && imported.has(definer.file));
+        // A name defined exactly once in the repository is a call even without an import (INFERRED).
+        const unique = !local.length && !backed.length && list.length === 1 && list[0].node !== node && isDistinctive(name) ? list : [];
+        const pick = local.length ? local : backed.length ? backed : unique;
+        for (const definer of pick.slice(0, 3)) targets.set(definer.node, { weight: 1 / pick.length, exact: pick.length === 1 });
+        if (targets.size >= MAX_CALL_TARGETS) break;
+      }
+      for (const [target, { weight, exact }] of [...targets].slice(0, MAX_CALL_TARGETS)) {
+        columns.edge(node, target, 'calls', Math.round(weight * 1000) / 1000, exact ? 'EXTRACTED' : 'INFERRED');
+        stats.callEdges++;
+      }
+    });
     for (const { node, refs, exclude } of sources) {
       const scored = new Map<number, number>();
       for (const name of refs) {
@@ -781,6 +812,7 @@ export function graphFromSketch(sketch: GraphSketch): CodeGraph {
     files: sketch.files.length, definitions: sketch.defs?.length ?? 0, externals: sketch.externals?.length ?? 0,
     importEdges: sketch.edges.filter(edge => (edge.kind ?? 'imports') === 'imports').length,
     referenceEdges: sketch.edges.filter(edge => edge.kind === 'references').length,
+    callEdges: sketch.edges.filter(edge => edge.kind === 'calls').length,
     importStatements: 0, importsResolved: 0, importsExternal: 0, importsUnresolved: 0, externalsOmitted: 0, languages: {},
   };
   return new CodeGraph({ revision: sketch.revision ?? 'sketch', partial: false, notes: [], stats, ...columns });

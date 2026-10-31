@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseSource, hash, languageFor } from '../src/parser.js';
-import { buildGraph, graphFromSketch, CodeGraph, type GraphSketch } from '../src/graph.js';
+import { buildGraph, graphFromSketch, CodeGraph, GRAPH_VERSION, type GraphSketch } from '../src/graph.js';
 import { buildCsr, louvain, shortestPath, stronglyConnected, undirectedCsr } from '../src/graph-algos.js';
 import { findPath, renderImpact, renderJson, renderMermaid, renderNeighbors, renderOverview, renderPath, validateMermaid, mermaidLabel } from '../src/graph-render.js';
 import { renderHtml } from '../src/graph-html.js';
@@ -316,9 +316,9 @@ test('JSON export is versioned, parseable and budget-limited', () => {
   const graph = syntheticGraph(120);
   const full = JSON.parse(renderJson(graph));
   assert.equal(full.format, 'reposqueeze-graph');
-  assert.equal(full.version, 1);
+  assert.equal(full.version, GRAPH_VERSION);
   assert.equal(full.nodes.filter((n: { kind: string }) => n.kind === 'file').length, 120);
-  assert(full.edges.every((e: { kind: string; confidence: string }) => ['imports', 'defines', 'references', 'contains'].includes(e.kind) && ['EXTRACTED', 'INFERRED'].includes(e.confidence)));
+  assert(full.edges.every((e: { kind: string; confidence: string }) => ['imports', 'defines', 'references', 'contains', 'calls'].includes(e.kind) && ['EXTRACTED', 'INFERRED'].includes(e.confidence)));
   const limited = JSON.parse(renderJson(graph, 2000));
   assert.equal(limited.partial, true);
   assert(limited.nodes.length < full.nodes.length);
@@ -442,4 +442,25 @@ test('caveman style is shorter than full, keeps every path, and is accepted by i
     assert.ok(tokens(terse) < tokens(full), `${request.mode}: caveman must be shorter`);
     for (const path of paths(full)) assert.ok(paths(terse).has(path), `${request.mode}: caveman keeps ${path}`);
   }
+});
+
+test('a call from one file to a definition in an imported file is a calls edge, and its callers are listed', async t => {
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Engine } = await import('../src/engine.js');
+  const root = await mkdtemp(join(tmpdir(), 'squeze-calls-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(join(root, 'store.ts'), 'export function saveRecord(record: string) {\n  return record.trim();\n}\n');
+  await writeFile(join(root, 'api.ts'), "import { saveRecord } from './store';\nexport function handle(input: string) {\n  return saveRecord(input);\n}\n");
+  const { loadGraph } = await import('../src/graph-store.js');
+  const { graph } = await loadGraph(new Engine(root));
+  let calls = 0;
+  for (let edge = 0; edge < graph.edgeFrom.length; edge++) {
+    if (graph.edgeKindOf(edge) !== 'calls') continue;
+    calls++;
+    assert.match(graph.label[graph.edgeFrom[edge]], /handle/);
+    assert.match(graph.label[graph.edgeTo[edge]], /saveRecord/);
+  }
+  assert.equal(calls, 1);
 });

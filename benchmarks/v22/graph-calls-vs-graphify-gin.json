@@ -1,0 +1,9 @@
+{
+  "squezeCalls": 1070,
+  "graphifyCalls": 1380,
+  "shared": 721,
+  "agreementOfSqueze": 0.674,
+  "agreementOfGraphify": 0.522,
+  "squezeExtractedAgreement": 0.681,
+  "squezeExtractedCalls": 1059
+}
