@@ -291,7 +291,8 @@ export function encodeContainer(magic: string, header: unknown, sections: readon
   const storedBytes = stored.reduce((sum, part) => sum + part.length, 0);
   if (storedBytes > MAX_CACHE_FILE_BYTES) throw new Error('cache body too large');
   let crc = 0;
-  for (const part of stored) crc = crc32(part, crc);
+  // Some Node 22 releases return 0 instead of the running value for an empty non-Buffer input, so empty parts are skipped.
+  for (const part of stored) if (part.length > 0) crc = crc32(part, crc);
   const preamble = Buffer.alloc(PREAMBLE_BYTES);
   preamble.write(magic, 0, 8, 'latin1');
   preamble.writeUInt32LE(CACHE_FORMAT_VERSION, 8);
