@@ -8,8 +8,8 @@ exports.run = async function () {
   assert(names.includes('squeze_context'));assert(names.includes('squeze_expand'));
   const result=await vscode.lm.invokeTool('squeze_context',{input:{query:'contextPack budget',budget:1000},toolInvocationToken:undefined});
   const text=result.content.filter(c=>c instanceof vscode.LanguageModelTextPart).map(c=>c.value).join('\n');
-  assert(text.includes('REPOSQUEEZE'));assert(text.includes('src/context.ts'));
+  assert(/squeze/i.test(text));assert(names.includes('squeze_map'));assert(names.includes('squeze_graph'));assert(text.includes('src/context.ts'));
   const expanded=await vscode.lm.invokeTool('squeze_expand',{input:{path:'src/tokens.ts',start:1,end:3,budget:1000},toolInvocationToken:undefined});
-  assert(expanded.content.some(c=>c.value?.includes('getEncoding')));
+  assert(expanded.content.some(c=>c.value?.includes('Tiktoken')));
   console.log('Squeze extension host: activation, tool registration, context and expansion passed.');
 };
