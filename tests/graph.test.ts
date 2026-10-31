@@ -420,3 +420,26 @@ test('loadGraph falls back to rebuilding when the cache is disabled', async t =>
   assert.deepEqual(edgeList(result.graph, 'imports'), ['x.py -> y.py']);
   assert.equal((await loadGraph(new Repository(root))).cached, false);
 });
+
+test('caveman style is shorter than full, keeps every path, and is accepted by impact, path and neighbors', async t => {
+  const { mkdtemp, writeFile, mkdir, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { Engine } = await import('../src/engine.js');
+  const { runGraph } = await import('../src/graph-store.js');
+  const { tokens } = await import('../src/tokens.js');
+  const root = await mkdtemp(join(tmpdir(), 'squeze-caveman-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, 'core'), { recursive: true });
+  await writeFile(join(root, 'core/store.ts'), 'export function saveRecord(record: string) { return record; }\nexport class Store {}\n');
+  await writeFile(join(root, 'core/api.ts'), "import { saveRecord } from './store';\nexport function handle(x: string) { return saveRecord(x); }\n");
+  await writeFile(join(root, 'core/cli.ts'), "import { handle } from './api';\nexport const run = () => handle('x');\n");
+  const repo = new Engine(root);
+  const paths = (text: string) => new Set(text.match(/[\w./-]+\.(?:ts|js)/g) ?? []);
+  for (const request of [{ mode: 'impact' as const, target: 'core/store.ts' }, { mode: 'path' as const, target: 'core/cli.ts', to: 'core/store.ts' }, { mode: 'neighbors' as const, target: 'core/api.ts' }]) {
+    const full = await runGraph(repo, request);
+    const terse = await runGraph(repo, { ...request, style: 'caveman' });
+    assert.ok(tokens(terse) < tokens(full), `${request.mode}: caveman must be shorter`);
+    for (const path of paths(full)) assert.ok(paths(terse).has(path), `${request.mode}: caveman keeps ${path}`);
+  }
+});

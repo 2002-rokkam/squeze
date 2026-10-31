@@ -6,7 +6,7 @@ import { compactJson } from './structured.js';
 import { repositoryMap } from './context.js';
 import { compactLog } from './compact.js';
 import { serve, VERSION } from './mcp.js';
-import { INSTRUCTIONS } from './instructions.js';
+import { CAVEMAN_RULES, INSTRUCTIONS } from './instructions.js';
 import { findSymbols, renderOutline, renderSymbols } from './symbols.js';
 import { runGraph, type GraphView } from './graph-store.js';
 
@@ -27,7 +27,7 @@ squeze graph --root REPO --json | --html out.html     full export (versioned JSO
 squeze compact --budget 2000 < test-output.log       fold repeated log lines, keep diagnostics
 squeze json < data.json                              smallest verified lossless JSON form
 squeze mcp --root REPO [--tools core|all]            stdio MCP server (core = context, expand, map, graph)
-squeze init --root REPO                              write .github/instructions/squeze.instructions.md
+squeze init --root REPO [--style caveman]             write .github/instructions/squeze.instructions.md (caveman: terse replies)
 
 Options: --semantic-model all-minilm (opt-in local Ollama embeddings, localhost only)
          --features "-prf,-git" | none   switch retrieval features off for ablations (also RSQ_FEATURES)
@@ -47,7 +47,8 @@ async function readStdin(limit = 2 * 1024 * 1024): Promise<string> {
 
 function graphRequest(values: { [key: string]: string | boolean | undefined }, positionals: string[]) {
   const depth = values.depth === undefined ? undefined : Number(values.depth);
-  const request: { mode: GraphView; target?: string; to?: string; depth?: number; budget?: number } = { mode: 'overview', depth };
+  const style = values.style === 'caveman' ? 'caveman' : undefined;
+  const request: { mode: GraphView; target?: string; to?: string; depth?: number; budget?: number; style?: 'full' | 'caveman' } = { mode: 'overview', depth, style };
   if (values.neighbors !== undefined) Object.assign(request, { mode: 'neighbors', target: values.neighbors });
   else if (values.impact !== undefined) Object.assign(request, { mode: 'impact', target: values.impact });
   else if (values.path !== undefined) Object.assign(request, { mode: 'path', target: values.path, to: positionals[1] });
@@ -77,6 +78,7 @@ async function main() {
       mermaid: { type: 'boolean' },
       html: { type: 'string' },
       depth: { type: 'string' },
+      style: { type: 'string' },
       start: { type: 'string', default: '1' },
       end: { type: 'string', default: '100' },
       version: { type: 'boolean', short: 'v' },
@@ -102,7 +104,8 @@ async function main() {
   if (command === 'init') {
     const path = join(root, '.github/instructions/squeze.instructions.md');
     await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, `---\napplyTo: "**"\n---\n${INSTRUCTIONS}`, { flag: 'wx' });
+    const style = values.style === 'caveman' ? CAVEMAN_RULES : '';
+    await writeFile(path, `---\napplyTo: "**"\n---\n${INSTRUCTIONS}${style}`, { flag: 'wx' });
     console.log(`Created ${path}`);
     return;
   }

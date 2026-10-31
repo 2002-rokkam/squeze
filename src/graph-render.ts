@@ -10,6 +10,9 @@ import { GRAPH_FORMAT, GRAPH_VERSION, isTestPath, type CodeGraph } from './graph
 export type GraphMode = 'overview' | 'neighbors' | 'path' | 'impact' | 'mermaid';
 
 /** Text that never exceeds the budget, even when the truncation marker alone would not fit. */
+/** `full` is the readable default. `caveman` drops decoration and filler words; every path and identifier stays exact. */
+export type RenderStyle = 'full' | 'caveman';
+
 export function clamp(text: string, budget: number): string {
   if (tokens(text) <= budget) return text;
   const cut = fit(text, budget);
@@ -171,19 +174,19 @@ function listFiles(graph: CodeGraph, nodes: number[], cap: number, directory = '
   return sorted.slice(0, cap).map(n => short(graph, n, directory)).join(', ') + more(nodes.length, cap);
 }
 
-export function renderNeighbors(graph: CodeGraph, target: string, depth: number, budget: number): string {
+export function renderNeighbors(graph: CodeGraph, target: string, depth: number, budget: number, style: RenderStyle = 'full'): string {
   const picked = pickTarget(graph, target);
   if ('message' in picked) return clamp(picked.message, budget);
   const node = picked.node;
   const steps = Math.max(1, Math.min(3, Math.floor(depth) || 1));
-  const render = (cap: number) => (graph.nodeKind(node) === 'file' ? fileNeighbors(graph, node, steps, cap) : graph.nodeKind(node) === 'def' ? defNeighbors(graph, node, steps, cap) : externalNeighbors(graph, node, cap));
+  const render = (cap: number) => (graph.nodeKind(node) === 'file' ? fileNeighbors(graph, node, steps, cap, style) : graph.nodeKind(node) === 'def' ? defNeighbors(graph, node, steps, cap) : externalNeighbors(graph, node, cap));
   return richest([40, 25, 15, 8, 4, 2, 1], render, budget);
 }
 
-function fileNeighbors(graph: CodeGraph, file: number, depth: number, cap: number): string {
+function fileNeighbors(graph: CodeGraph, file: number, depth: number, cap: number, style: RenderStyle = 'full'): string {
   const sub = graph.subsystems[graph.community[file]];
   const rankPosition = graph.filesByRank().indexOf(file) + 1;
-  const lines = [`file ${graph.label[file]} [S${sub.id} ${sub.name}] · ${graph.detail[file]} · rank #${rankPosition}/${graph.fileCount}`];
+  const lines = [style === 'caveman' ? `${graph.label[file]} [S${sub.id}] #${rankPosition}/${graph.fileCount}` : `file ${graph.label[file]} [S${sub.id} ${sub.name}] · ${graph.detail[file]} · rank #${rankPosition}/${graph.fileCount}`];
   const split = (csr: Csr, wanted: (mask: number) => boolean) => {
     const out: number[] = [];
     for (let e = csr.start[file]; e < csr.start[file + 1]; e++) if (wanted(graph.fileMask[csr.edge[e]])) out.push(csr.to[e]);
@@ -197,7 +200,7 @@ function fileNeighbors(graph: CodeGraph, file: number, depth: number, cap: numbe
   for (let e = graph.out.start[file]; e < graph.out.start[file + 1]; e++) if (graph.kind[graph.out.to[e]] === 2) externals.push(graph.label[graph.out.to[e]].replace(/^external:/, ''));
   if (imports.length) lines.push(`imports (${imports.length}): ${listFiles(graph, imports, cap)}`);
   if (externals.length) lines.push(`external (${externals.length}): ${externals.slice(0, cap).join(', ')}${more(externals.length, cap)}`);
-  if (uses.length) lines.push(`uses without import (${uses.length}, name-based): ${listFiles(graph, uses, cap)}`);
+  if (uses.length) lines.push(`${style === 'caveman' ? 'uses' : 'uses without import'} (${uses.length}${style === 'caveman' ? ', name' : ', name-based'}): ${listFiles(graph, uses, cap)}`);
   if (importedBy.length) lines.push(`imported by (${importedBy.length}): ${listFiles(graph, importedBy, cap)}`);
   if (usedBy.length) lines.push(`used by (${usedBy.length}, name-based): ${listFiles(graph, usedBy, cap)}`);
   const defs: number[] = [];
@@ -281,7 +284,7 @@ export function findPath(graph: CodeGraph, from: number, to: number): { hops: Ho
   return hops ? { hops, directed: false, kind: 'full' } : undefined;
 }
 
-export function renderPath(graph: CodeGraph, a: string, b: string, budget: number): string {
+export function renderPath(graph: CodeGraph, a: string, b: string, budget: number, style: RenderStyle = 'full'): string {
   const first = pickTarget(graph, a, 'from');
   if ('message' in first) return clamp(first.message, budget);
   const second = pickTarget(graph, b, 'to');
@@ -292,7 +295,9 @@ export function renderPath(graph: CodeGraph, a: string, b: string, budget: numbe
   }
   const kindOf = (edge: number) => (found.kind === 'imports' ? 'imports' : found.kind === 'file' ? (graph.fileMask[edge] & 1 ? 'imports' : 'references~') : mark(graph, edge));
   const quality = found.hops.every(hop => kindOf(hop.edge) === 'imports') ? 'imports only' : 'uses name-based references (~)';
-  const lines = [`path ${graph.describe(first.node)} → ${graph.describe(second.node)}: ${found.hops.length} hops${found.directed ? '' : ', edge direction ignored'} · ${quality}`, graph.describe(first.node)];
+  const lines = style === 'caveman'
+    ? [`${graph.describe(first.node)} → ${graph.describe(second.node)}: ${found.hops.length} hops${found.directed ? '' : ' (undirected)'}, ${found.hops.every(hop => kindOf(hop.edge) === 'imports') ? 'imports' : 'name-based'}`]
+    : [`path ${graph.describe(first.node)} → ${graph.describe(second.node)}: ${found.hops.length} hops${found.directed ? '' : ', edge direction ignored'} · ${quality}`, graph.describe(first.node)];
   found.hops.forEach(hop => lines.push(`  ${hopText(graph, hop, kindOf)}`));
   if (!found.hops.length) lines.push('  (same node)');
   return clamp(lines.join('\n'), budget);
@@ -302,7 +307,7 @@ export function renderPath(graph: CodeGraph, a: string, b: string, budget: numbe
 // impact
 
 /** Reverse dependents of a file (imports first, then files that only mention its names) or of a definition. */
-export function renderImpact(graph: CodeGraph, target: string, depth: number, budget: number): string {
+export function renderImpact(graph: CodeGraph, target: string, depth: number, budget: number, style: RenderStyle = 'full'): string {
   const picked = pickTarget(graph, target);
   if ('message' in picked) return clamp(picked.message, budget);
   const node = picked.node;
@@ -317,9 +322,11 @@ export function renderImpact(graph: CodeGraph, target: string, depth: number, bu
   const tests = [...files].filter(f => isTestPath(graph.label[f])).length;
   const render = (cap: number) => {
     const via = isFile ? 'via imports' : 'via references';
-    const lines = [`impact of ${graph.describe(node)}: ${strongSet.size} ${isFile ? 'files' : 'definitions/files'} ${via} within ${steps} hops (direct ${strong[0]?.length ?? 0})${weak.length ? `, +${weak.length} only via name-based references` : ''} · ${files.size} files total, ${tests} test files${graph.partial ? ' · partial graph' : ''}`];
+    const lines = style === 'caveman'
+      ? [`${graph.describe(node)} ← ${strong[0]?.length ?? 0} direct, ${files.size} total${weak.length ? `, ${weak.length} name-only` : ''}${tests ? `, ${tests} tests` : ''}${graph.partial ? ' (partial)' : ''}`]
+      : [`impact of ${graph.describe(node)}: ${strongSet.size} ${isFile ? 'files' : 'definitions/files'} ${via} within ${steps} hops (direct ${strong[0]?.length ?? 0})${weak.length ? `, +${weak.length} only via name-based references` : ''} · ${files.size} files total, ${tests} test files${graph.partial ? ' · partial graph' : ''}`];
     strong.forEach((level, d) => { if (level.length) lines.push(`d${d + 1} (${level.length}): ${listFiles(graph, level, cap)}`); });
-    if (weak.length) lines.push(`name-based only (${weak.length}): ${listFiles(graph, weak, Math.max(1, Math.floor(cap / 2)))}`);
+    if (weak.length) lines.push(`${style === 'caveman' ? 'name-only' : 'name-based only'} (${weak.length}): ${listFiles(graph, weak, Math.max(1, Math.floor(cap / 2)))}`);
     if (!strongSet.size && !weak.length) lines.push('nothing in the graph depends on it');
     return lines.join('\n');
   };

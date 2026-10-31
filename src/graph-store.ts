@@ -4,7 +4,7 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import { CacheStore } from './store.js';
 import { CodeGraph, GRAPH_FORMAT, GRAPH_VERSION, buildGraph, type GraphParts } from './graph.js';
 import { renderHtml } from './graph-html.js';
-import { renderImpact, renderJson, renderMermaid, renderNeighbors, renderOverview, renderPath } from './graph-render.js';
+import { renderImpact, renderJson, renderMermaid, renderNeighbors, renderOverview, renderPath, type RenderStyle } from './graph-render.js';
 import { checkBudget } from './tokens.js';
 import type { Repository } from './repository.js';
 
@@ -12,6 +12,8 @@ export type GraphView = 'overview' | 'neighbors' | 'path' | 'impact' | 'mermaid'
 
 export interface GraphRequest {
   mode?: GraphView;
+  /** `caveman` renders the terse form: same paths and identifiers, fewer words. */
+  style?: RenderStyle;
   /** File path, path suffix, basename or symbol name. */
   target?: string;
   /** Second endpoint for `path`. */
@@ -53,6 +55,7 @@ export async function loadGraph(repo: Repository): Promise<{ graph: CodeGraph; c
 export async function runGraph(repo: Repository, request: GraphRequest = {}): Promise<string> {
   const mode = request.mode ?? 'overview';
   const budget = request.budget === undefined ? DEFAULT_GRAPH_BUDGET : checkBudget(request.budget);
+  const style: RenderStyle = request.style === 'caveman' ? 'caveman' : 'full';
   const { graph } = await loadGraph(repo);
   const need = (value: string | undefined, name: string) => {
     if (!value?.trim()) throw new Error(`${name} is required for mode ${mode}`);
@@ -60,9 +63,9 @@ export async function runGraph(repo: Repository, request: GraphRequest = {}): Pr
   };
   switch (mode) {
     case 'overview': return renderOverview(graph, budget);
-    case 'neighbors': return renderNeighbors(graph, need(request.target, 'target'), request.depth ?? 1, budget);
-    case 'path': return renderPath(graph, need(request.target, 'target'), need(request.to, 'to'), budget);
-    case 'impact': return renderImpact(graph, need(request.target, 'target'), request.depth ?? 3, budget);
+    case 'neighbors': return renderNeighbors(graph, need(request.target, 'target'), request.depth ?? 1, budget, style);
+    case 'path': return renderPath(graph, need(request.target, 'target'), need(request.to, 'to'), budget, style);
+    case 'impact': return renderImpact(graph, need(request.target, 'target'), request.depth ?? 3, budget, style);
     case 'mermaid': return renderMermaid(graph, request.target?.trim() || undefined, budget);
     case 'json': return renderJson(graph, request.budget === undefined ? undefined : budget);
     case 'html': return renderHtml(graph, { maxNodes: request.maxNodes });

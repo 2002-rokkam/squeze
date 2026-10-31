@@ -78,11 +78,12 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
         target: z.string().optional().describe('File, path suffix or symbol.'),
         to: z.string().optional().describe('Path end point.'),
         depth: z.number().optional(),
+        style: z.enum(['full', 'caveman']).optional().describe('caveman: terse, fewer tokens; same paths.'),
         budget,
       },
       annotations,
     },
-    async ({ mode, target, to, depth, budget }) => result(await runGraph(repo, { mode, target, to, depth, budget: limit(budget, 1500) })),
+    async ({ mode, target, to, depth, style, budget }) => result(await runGraph(repo, { mode, target, to, depth, style, budget: limit(budget, 1500) })),
   );
   if (tools === 'all') {
     server.registerTool(

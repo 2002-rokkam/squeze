@@ -142,6 +142,10 @@ Details and rationale: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). A source-ve
 | MCP | Four tools by default (context, expand, map, graph); smaller schemas |
 | Bug fix | Python files no longer get a spurious whole-file chunk named after their first line |
 
+## Standard and status
+
+The bar for the code graph and the caveman style, with each target marked met or not met, is in [docs/STANDARD.md](docs/STANDARD.md). Squeze is not yet better than Graphify on every measure: it has no call edges and no document support, and no head-to-head study has been run.
+
 ## Evidence
 
 All results below are retrieval metrics under a fixed token budget, not model answer quality. "Baseline" is the unmodified upstream 2.1.0.
