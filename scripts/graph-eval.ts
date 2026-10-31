@@ -129,6 +129,9 @@ async function correctness() {
 // only the quoted path (optionally with an alias).
 const IMPORT_LINE = /^\s*(?:import|from|require|use|#\s*include|using|package|pub\s+mod|mod|extern\s+crate|load)\b|\brequire\s*\(|\bimport\s*\(|^\s*(?:[\w.]+\s+)?"[\w.\-~/@]+"\s*$/;
 
+// Go dependents: importers of the package that use a name the file defines (1) or any importer of the package (0).
+const GO_USE_TRUTH = process.env.GO_TRUTH !== 'package';
+
 async function tokenStudy() {
   const { snapshot, graph, texts } = await load();
   const codeFiles = [...texts].filter(([path]) => graph.label.indexOf(path) >= 0 && graph.label.indexOf(path) < graph.fileCount).sort((a, b) => (a[0] < b[0] ? -1 : 1));
@@ -152,7 +155,15 @@ async function tokenStudy() {
     const hits = mentions(stemOf(path), path);
     const graphText = renderImpact(graph, path, 3, 1500);
     const importLines = hits.filter(hit => hit.lines.some(line => IMPORT_LINE.test(line.split(':').slice(2).join(':'))));
-    const truth = new Set(importLines.map(hit => hit.path));
+    // Go imports name a package (a directory), not a file: the dependents of a .go file are the files that import its
+    // package path. A word match on the file name is not a valid ground truth for Go.
+    const goModule = /^module\s+(\S+)/m.exec(existsSync(join(repoDir, 'go.mod')) ? readFileSync(join(repoDir, 'go.mod'), 'utf8') : '')?.[1];
+    const goLeaf = dirname(path) === '.' ? goModule?.split('/').pop() : dirname(path).split('/').pop();
+    const goDefined = [...(texts.get(path) ?? '').matchAll(/^(?:func|type|var|const)\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)/gm)].map(match => match[1]);
+    const usesDefinition = (text: string) => goDefined.some(name => new RegExp(`\\b${goLeaf}\\.${name}\\b`).test(text));
+    const truth = path.endsWith('.go') && goModule
+      ? new Set(codeFiles.filter(([other, text]) => other !== path && text.includes(`"${goModule}${dirname(path) === '.' ? '' : `/${dirname(path)}`}"`) && (GO_USE_TRUTH ? usesDefinition(text) : true)).map(([other]) => other))
+      : new Set(importLines.map(hit => hit.path));
     const direct = new Set<string>();
     for (let e = graph.importIn.start[f]; e < graph.importIn.start[f + 1]; e++) direct.add(graph.label[graph.importIn.to[e]]);
     const both = [...direct].filter(p => truth.has(p)).length;

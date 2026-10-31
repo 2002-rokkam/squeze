@@ -266,7 +266,8 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Code
         refs ??= referenced();
         const members = info.language === 'go' ? qualifiedMembers(source.text, ref.spec.split('/').pop()!) : undefined;
         const mentioned = targets.filter(path => topLevelNames(fileId.get(path)!).some(name => (members ?? refs!).has(name)));
-        targets = (mentioned.length ? mentioned : targets).slice(0, MAX_PACKAGE_FILES);
+        // Only the files this importer actually uses. Falling back to every package file over-reports dependents.
+        targets = mentioned.slice(0, MAX_PACKAGE_FILES);
         confidence = 'INFERRED';
       }
       for (const path of targets) {
