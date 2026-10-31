@@ -163,7 +163,18 @@ Pointers are one-line references, not shown code, so two families are reported. 
 
 What produces the gain: the same build with every optional ranking and packing feature switched off (`RSQ_FEATURES=none`: new index, parsers, chunkers and redaction only) shows 58.3% on the shown-only file hit. The optional features add 5.0 pp on top of that (63.3% vs 58.3%, paired CI [−1.7, +13.3], not significant on 60 instances) and most of the "or pointed to" gain (83.3% vs 58.3%) comes from the pointer lines. A plain-`ripgrep` reference scores 65.0% file-hit but only 11.8% gold-line recall on 60 instances of an earlier run. 21.7% of the issues name a gold file explicitly, which favours every method. Per-language and per-repository tables: [benchmarks/v22/swe-final/report.md](benchmarks/v22/swe-final/report.md). Timings were taken at load average above 40 and are not a speed claim.
 
-TOKENCOST_SECTION
+**Tokens an agent consumes to obtain a gold file** (the credit-saving question). 61 dev instances, `o200k_base`, measured on real checkouts at the base commit by [bench/tokencost](bench/tokencost). Strategies: **S1** a grep-style agent that searches the issue's identifiers and reads whole files in rank order until it has read a gold file (cap 20 files); **S1b** the same but it skips test and non-code files; a context pack at 4,000 tokens from plain `ripgrep` scoring, from 2.1.0, and from Squeze, each followed by one 120-line `expand` of the best file when the gold file was not shown.
+
+| Strategy | Reaches a gold file | Median tokens when reached | Tokens per reached instance | Cost per reached instance vs S1 [95% CI] |
+| --- | ---: | ---: | ---: | ---: |
+| S1 grep + read whole files | 46/61 (75%) | 42,013 | 162,086 | 1 (reference) |
+| S1b same, code files only | 51/61 (84%) | 16,064 | 67,082 | 0.41 [0.29, 0.57] |
+| Plain-ripgrep pack | 40/61 (66%) | 3,981 | 6,128 | 0.038 [0.029, 0.051] |
+| 2.1.0 pack | 28/61 (46%) | 3,980 | 9,208 | 0.057 [0.042, 0.081] |
+| **Squeze pack** | **39/61 (64%)** | 3,986 | **6,548** | **0.040 [0.030, 0.055]** |
+
+Reading the table honestly: a Squeze pack costs about **4% of what the whole-file grep agent spends per reached instance (about 25× fewer tokens) and 29% less than 2.1.0 per reached instance**, because it reaches the gold file in 64% of cases instead of 46% for the same 4,000 tokens. But the whole-file agent reaches a gold file more often (75–84%; it keeps reading up to 20 files), and a plain-`ripgrep` pack is statistically indistinguishable from Squeze on this measure (66% vs 64%, 6.1k vs 6.5k tokens). Squeze's advantage over plain `ripgrep` is in the lines it shows (gold-line recall 34.8% vs 11.8% in the SWE-bench table above), not in finding the file. This is a proxy for agent behaviour, not a measured Copilot bill. Files: [benchmarks/v22/tokencost/](benchmarks/v22/tokencost).
+
 
 ### 2. Repository's own development suite (40 questions, 8 repositories, 4 query phrasings)
 

@@ -1,0 +1,261 @@
+{
+  "n": 61,
+  "reference": "S1",
+  "resamples": 10000,
+  "seed": 1729,
+  "summaries": {
+    "S1": {
+      "n": 61,
+      "reached": 46,
+      "reachRate": 0.7540983606557377,
+      "meanTokens": 96146.36956521739,
+      "medianTokens": 42013,
+      "tokensPerReached": 162086.47826086957
+    },
+    "S1b": {
+      "n": 61,
+      "reached": 51,
+      "reachRate": 0.8360655737704918,
+      "meanTokens": 44451.62745098039,
+      "medianTokens": 16064,
+      "tokensPerReached": 67081.60784313726
+    },
+    "ripgrep-naive": {
+      "n": 61,
+      "reached": 40,
+      "reachRate": 0.6557377049180327,
+      "meanTokens": 3980.65,
+      "medianTokens": 3980.5,
+      "tokensPerReached": 6042.725
+    },
+    "ripgrep-naive+expand": {
+      "n": 61,
+      "reached": 40,
+      "reachRate": 0.6557377049180327,
+      "meanTokens": 3980.65,
+      "medianTokens": 3980.5,
+      "tokensPerReached": 6128.225
+    },
+    "baseline-2.1.0": {
+      "n": 61,
+      "reached": 28,
+      "reachRate": 0.45901639344262296,
+      "meanTokens": 3973.535714285714,
+      "medianTokens": 3980,
+      "tokensPerReached": 8506.32142857143
+    },
+    "baseline-2.1.0+expand": {
+      "n": 61,
+      "reached": 28,
+      "reachRate": 0.45901639344262296,
+      "meanTokens": 3973.535714285714,
+      "medianTokens": 3980,
+      "tokensPerReached": 9207.642857142857
+    },
+    "squeze": {
+      "n": 61,
+      "reached": 39,
+      "reachRate": 0.639344262295082,
+      "meanTokens": 3980.3076923076924,
+      "medianTokens": 3986,
+      "tokensPerReached": 6228.333333333333
+    },
+    "squeze+expand": {
+      "n": 61,
+      "reached": 39,
+      "reachRate": 0.639344262295082,
+      "meanTokens": 3980.3076923076924,
+      "medianTokens": 3986,
+      "tokensPerReached": 6548.128205128205
+    }
+  },
+  "comparisons": {
+    "S1b": {
+      "bothReached": 45,
+      "meanDiff": {
+        "value": -61501.42222222222,
+        "lo": -94268.62222222223,
+        "hi": -33242.08888888889
+      },
+      "geoRatio": {
+        "value": 0.479799636850065,
+        "lo": 0.3467093132028709,
+        "hi": 0.6468668838455196
+      },
+      "costPerReachRatio": {
+        "value": 0.41386307212605966,
+        "lo": 0.2939334866833776,
+        "hi": 0.5655303042406676
+      },
+      "reach": {
+        "both": 45,
+        "neither": 9,
+        "onlyA": 6,
+        "onlyB": 1,
+        "p": 0.12500000000000006,
+        "diff": 0.08196721311475409
+      }
+    },
+    "ripgrep-naive": {
+      "bothReached": 37,
+      "meanDiff": {
+        "value": -65564.54054054055,
+        "lo": -96846.91891891892,
+        "hi": -37798.18918918919
+      },
+      "geoRatio": {
+        "value": 0.1457149164284018,
+        "lo": 0.09127521716280557,
+        "hi": 0.2289522712950672
+      },
+      "costPerReachRatio": {
+        "value": 0.03728087046394182,
+        "lo": 0.028721004949560855,
+        "hi": 0.04998177593723993
+      },
+      "reach": {
+        "both": 37,
+        "neither": 12,
+        "onlyA": 3,
+        "onlyB": 9,
+        "p": 0.1459960937500003,
+        "diff": -0.09836065573770492
+      }
+    },
+    "ripgrep-naive+expand": {
+      "bothReached": 37,
+      "meanDiff": {
+        "value": -65564.54054054055,
+        "lo": -96846.91891891892,
+        "hi": -37798.18918918919
+      },
+      "geoRatio": {
+        "value": 0.1457149164284018,
+        "lo": 0.09127521716280557,
+        "hi": 0.2289522712950672
+      },
+      "costPerReachRatio": {
+        "value": 0.03780836665558831,
+        "lo": 0.029174844097685997,
+        "hi": 0.05062836229028978
+      },
+      "reach": {
+        "both": 37,
+        "neither": 12,
+        "onlyA": 3,
+        "onlyB": 9,
+        "p": 0.1459960937500003,
+        "diff": -0.09836065573770492
+      }
+    },
+    "baseline-2.1.0": {
+      "bothReached": 27,
+      "meanDiff": {
+        "value": -51160.7037037037,
+        "lo": -95437.11111111111,
+        "hi": -18501.85185185185
+      },
+      "geoRatio": {
+        "value": 0.20402293632386176,
+        "lo": 0.1206381861039229,
+        "hi": 0.3404656175643951
+      },
+      "costPerReachRatio": {
+        "value": 0.05248014220458882,
+        "lo": 0.03898467213287138,
+        "hi": 0.07380350850564546
+      },
+      "reach": {
+        "both": 27,
+        "neither": 14,
+        "onlyA": 1,
+        "onlyB": 19,
+        "p": 0.00004005432128906248,
+        "diff": -0.29508196721311475
+      }
+    },
+    "baseline-2.1.0+expand": {
+      "bothReached": 27,
+      "meanDiff": {
+        "value": -51160.7037037037,
+        "lo": -95437.11111111111,
+        "hi": -18501.85185185185
+      },
+      "geoRatio": {
+        "value": 0.20402293632386176,
+        "lo": 0.1206381861039229,
+        "hi": 0.3404656175643951
+      },
+      "costPerReachRatio": {
+        "value": 0.05680697708986955,
+        "lo": 0.04199014193404419,
+        "hi": 0.08078829732720029
+      },
+      "reach": {
+        "both": 27,
+        "neither": 14,
+        "onlyA": 1,
+        "onlyB": 19,
+        "p": 0.00004005432128906248,
+        "diff": -0.29508196721311475
+      }
+    },
+    "squeze": {
+      "bothReached": 36,
+      "meanDiff": {
+        "value": -68451.97222222222,
+        "lo": -109956.30555555556,
+        "hi": -35137.5
+      },
+      "geoRatio": {
+        "value": 0.15542125541073634,
+        "lo": 0.09530219402350082,
+        "hi": 0.24956679841425453
+      },
+      "costPerReachRatio": {
+        "value": 0.03842598963319545,
+        "lo": 0.02886244746027206,
+        "hi": 0.05233536166258765
+      },
+      "reach": {
+        "both": 36,
+        "neither": 12,
+        "onlyA": 3,
+        "onlyB": 10,
+        "p": 0.09228515625000008,
+        "diff": -0.11475409836065574
+      }
+    },
+    "squeze+expand": {
+      "bothReached": 36,
+      "meanDiff": {
+        "value": -68451.97222222222,
+        "lo": -109956.30555555556,
+        "hi": -35137.5
+      },
+      "geoRatio": {
+        "value": 0.15542125541073634,
+        "lo": 0.09530219402350082,
+        "hi": 0.24956679841425453
+      },
+      "costPerReachRatio": {
+        "value": 0.04039897883763839,
+        "lo": 0.03022274994902064,
+        "hi": 0.055025456104972996
+      },
+      "reach": {
+        "both": 36,
+        "neither": 12,
+        "onlyA": 3,
+        "onlyB": 10,
+        "p": 0.09228515625000008,
+        "diff": -0.11475409836065574
+      }
+    }
+  },
+  "failures": {
+    "ripgrep-naive": 0,
+    "baseline-2.1.0": 1,
+    "squeze": 0
+  }
+}
