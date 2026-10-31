@@ -146,9 +146,9 @@ function extractRust(text: string): ImportRef[] {
   for (const match of text.matchAll(/^[ \t]*(?:pub(?:\([\w: ]+\))?[ \t]+)?(?:mod[ \t]+(\w+)[ \t]*;|use[ \t]+([^;]{1,2000});)/gm)) {
     const line = locate(match.index!);
     if (match[1]) { out.push({ spec: match[1], line, declaration: true }); continue; }
-    const path = match[2].replace(/\s+/g, '');
+    const path = match[2].replace(/\s+as\s+\w+/g, '').replace(/\s+/g, '');
     const brace = path.indexOf('{');
-    if (brace < 0) { out.push({ spec: path.replace(/::\*$/, '').replace(/as\w+$/, ''), line }); continue; }
+    if (brace < 0) { out.push({ spec: path.replace(/::\*$/, ''), line }); continue; }
     const prefix = path.slice(0, brace).replace(/::$/, '');
     let depth = 0;
     let item = '';
@@ -159,10 +159,10 @@ function extractRust(text: string): ImportRef[] {
       if (ch === ',' && depth === 0) { items.push(item); item = ''; } else item += ch;
     }
     items.push(item);
-    out.push({ spec: prefix, line });
+    if (prefix) out.push({ spec: prefix, line });
     for (const entry of items) {
-      const name = entry.split('{')[0].replace(/::$/, '').replace(/as\w+$/, '');
-      if (/^\w+(?:::\w+)*$/.test(name) && name !== 'self') out.push({ spec: `${prefix}::${name}`, line });
+      const name = entry.split('{')[0].replace(/::$/, '');
+      if (/^\w+(?:::\w+)*$/.test(name) && name !== 'self') out.push({ spec: prefix ? `${prefix}::${name}` : name, line });
     }
   }
   return out.slice(0, MAX_IMPORTS);
@@ -364,7 +364,7 @@ export function createResolver(context: ResolverContext): (from: string, languag
     if (ext) for (const swap of JS_SWAP[ext]) if (has(base.slice(0, -ext.length) + swap)) return base.slice(0, -ext.length) + swap;
     if (has(base) && /\.\w+$/.test(baseOf(base))) return base;
     for (const extension of JS_EXTENSIONS) if (has(base + extension)) return base + extension;
-    for (const extension of JS_EXTENSIONS) if (has(`${base}/index${extension}`)) return `${base}/index${extension}`;
+    for (const extension of JS_EXTENSIONS) if (has(joinDir(base, `index${extension}`))) return joinDir(base, `index${extension}`);
     return undefined;
   };
   const jsExternal = (spec: string): string => {
@@ -409,6 +409,16 @@ export function createResolver(context: ResolverContext): (from: string, languag
   };
 
   // ---- Python
+  /**
+   * Directories an absolute import can start from: the directory above the importer's outermost package (or the
+   * importer's own directory for a script), the repository root, and the conventional src/ and lib/. A package
+   * directory itself is not a root, so `import typing` inside flask/ never finds flask/typing.py.
+   */
+  const pythonRoots = (from: string): string[] => {
+    let dir = dirOf(from);
+    while (dir && has(joinDir(dir, '__init__.py'))) dir = dirOf(dir);
+    return [dir, '', 'src', 'lib'];
+  };
   const resolvePython = (from: string, ref: ImportRef): Resolution => {
     const dots = /^\.*/.exec(ref.spec)![0].length;
     const dotted = ref.spec.slice(dots).replace(/\./g, '/');
@@ -418,7 +428,7 @@ export function createResolver(context: ResolverContext): (from: string, languag
       for (let i = 1; i < dots; i++) dir = dirOf(dir);
       bases.push(dir);
     } else {
-      bases.push(...ancestors(dirOf(from)), 'src', 'lib');
+      bases.push(...pythonRoots(from));
     }
     for (const base of unique(bases)) {
       const modulePath = dotted ? joinDir(base, dotted) : base;
@@ -541,7 +551,8 @@ export function createResolver(context: ResolverContext): (from: string, languag
         found = rustWalk(moduleDir, segments) ?? (root === undefined ? undefined : rustWalk(root, segments));
       }
     }
-    if (found && found !== from) return { files: [found] };
+    // A path that resolves to the importing file itself (`use super::*` in an inline test module) is not an import.
+    if (found) return { files: [found] };
     return found || first === 'crate' || first === 'self' || first === 'super' ? { files: [] } : { files: [], external: first };
   };
 

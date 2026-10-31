@@ -132,7 +132,11 @@ test('Rust: mod declarations, crate/self/super paths and workspace crates', () =
   assert.deepEqual(edges['core/src/lib.rs'], ['core/src/net/mod.rs', 'core/src/util.rs']);
   assert.deepEqual(edges['core/src/net/mod.rs'], ['core/src/util.rs', 'core/src/util.rs', 'core/src/net/client.rs', 'core/src/net/client.rs', 'external:std', 'external:std']);
   assert.deepEqual(edges['core/src/net/client.rs'], ['core/src/net/mod.rs']);
-  assert.deepEqual(edges['cli/src/main.rs'], ['core/src/util.rs', 'external:serde']);
+  assert.deepEqual(edges['cli/src/main.rs'], ['core/src/util.rs', 'external:serde', 'cli/src/main.rs']);
+});
+
+test('Rust: `use` extraction keeps names that contain "as" and drops aliases', () => {
+  assert.deepEqual(specs('rust', 'use a::class as k;\nuse b::{self, has_it as h, c::{d, e}};\nuse {x, y};\nuse std::io::*;\n'), ['a::class', 'b', 'b::has_it', 'b::c', 'x', 'y', 'std::io']);
 });
 
 test('C and C++: quoted includes relative to the file, then by path suffix; angle includes stay external', () => {
