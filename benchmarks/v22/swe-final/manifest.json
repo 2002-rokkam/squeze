@@ -1,0 +1,179 @@
+{
+  "schema": "rsq-bench-swe/1",
+  "command": "node --import tsx bench/run.ts --dataset lite,multilingual --split dev --repos axios/axios,briannesbitt/carbon,burntsushi/ripgrep,caddyserver/caddy,django/django,faker-ruby/faker,fmtlib/fmt,gin-gonic/gin,google/gson,immutable-js/immutable-js,jekyll/jekyll,jqlang/jq,marshmallow-code/marshmallow,micropython/micropython,mwaskom/seaborn,nlohmann/json,pallets/flask,preactjs/preact,psf/requests,pydicom/pydicom,pytest-dev/pytest,sharkdp/bat,sphinx-doc/sphinx,sympy/sympy,tokio-rs/axum,tokio-rs/tokio --sample 60 --offline --variant baseline --variant final=<final-build>:REPOSQUEEZE_CACHE_DIR=~/reposqueeze-lab/tmp/cache-bench3/final --variant final-none=<final-build>:RSQ_FEATURES=none,REPOSQUEEZE_CACHE_DIR=~/reposqueeze-lab/tmp/cache-bench3/final-none --budget 4000 --workers 2 --timeout 240 --max-load 80 --out ~/reposqueeze-lab/results/final2/swe",
+  "startedAt": "2026-10-31T17:14:15.774Z",
+  "resumes": [
+    "2026-10-31T17:15:50.378Z",
+    "2026-10-31T17:22:45.623Z",
+    "2026-10-31T18:09:47.331Z"
+  ],
+  "node": "v25.9.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpus": 8,
+  "memGiB": 16,
+  "harness": {
+    "gitSha": "2a022ff864742454963ed75f386f8442c741fcad",
+    "dirty": false
+  },
+  "split": "dev",
+  "seed": 1729,
+  "bootstrapResamples": 10000,
+  "budget": 4000,
+  "timeoutSec": 240,
+  "workers": 2,
+  "cloneMode": "full",
+  "corpus": {
+    "axios/axios": "full",
+    "briannesbitt/carbon": "full",
+    "burntsushi/ripgrep": "full",
+    "caddyserver/caddy": "full",
+    "django/django": "full",
+    "faker-ruby/faker": "full",
+    "fmtlib/fmt": "full",
+    "gin-gonic/gin": "full",
+    "google/gson": "full",
+    "immutable-js/immutable-js": "full",
+    "jekyll/jekyll": "full",
+    "jqlang/jq": "full",
+    "marshmallow-code/marshmallow": "full",
+    "micropython/micropython": "full",
+    "mwaskom/seaborn": "full",
+    "nlohmann/json": "full",
+    "pallets/flask": "full",
+    "preactjs/preact": "full",
+    "psf/requests": "full",
+    "pydicom/pydicom": "full",
+    "pytest-dev/pytest": "full",
+    "sharkdp/bat": "full",
+    "sphinx-doc/sphinx": "full",
+    "sympy/sympy": "full",
+    "tokio-rs/axum": "full",
+    "tokio-rs/tokio": "full"
+  },
+  "datasets": [
+    {
+      "key": "lite",
+      "hfId": "SWE-bench/SWE-bench_Lite",
+      "revision": "b0dde1093fe417d83b7184254edf8199c1f0dff5",
+      "contentSha256": "168468da50ffec2fac4a7c3141876090f3d6f80aa78e01d04cca9b99ea27938d",
+      "files": [
+        {
+          "hfSplit": "dev",
+          "rows": 23,
+          "sha256": "534ef04f48a0667deffe33d021a9e889e246c966bf5dbb493aea1e5a5cf7ca0f"
+        },
+        {
+          "hfSplit": "test",
+          "rows": 300,
+          "sha256": "133a1c43e22f9dcb3a3df5d826cc82c5cf33dc2927510080af1c8b8383051766"
+        }
+      ],
+      "total": 323,
+      "dev": 167,
+      "test": 156,
+      "prepared": 167,
+      "selected": 19
+    },
+    {
+      "key": "multilingual",
+      "hfId": "SWE-bench/SWE-bench_Multilingual",
+      "revision": "846e647b9f33c0b51b739d005d13d85493c9af09",
+      "contentSha256": "23d209c7ffcfe2ac776352f6ad45555e916380ba1575b09539ce14a05d296ef5",
+      "files": [
+        {
+          "hfSplit": "test",
+          "rows": 300,
+          "sha256": "83441ebb91ffa12cb167d02ff816ba4d2d30afa5f036ade5f6ab56bee09e37ce"
+        }
+      ],
+      "total": 300,
+      "dev": 160,
+      "test": 140,
+      "prepared": 160,
+      "selected": 41
+    }
+  ],
+  "filters": {
+    "repos": [
+      "axios/axios",
+      "briannesbitt/carbon",
+      "burntsushi/ripgrep",
+      "caddyserver/caddy",
+      "django/django",
+      "faker-ruby/faker",
+      "fmtlib/fmt",
+      "gin-gonic/gin",
+      "google/gson",
+      "immutable-js/immutable-js",
+      "jekyll/jekyll",
+      "jqlang/jq",
+      "marshmallow-code/marshmallow",
+      "micropython/micropython",
+      "mwaskom/seaborn",
+      "nlohmann/json",
+      "pallets/flask",
+      "preactjs/preact",
+      "psf/requests",
+      "pydicom/pydicom",
+      "pytest-dev/pytest",
+      "sharkdp/bat",
+      "sphinx-doc/sphinx",
+      "sympy/sympy",
+      "tokio-rs/axum",
+      "tokio-rs/tokio"
+    ],
+    "sample": 60,
+    "sampleMode": "even"
+  },
+  "instanceCount": 60,
+  "instancesSha256": "2c565469f5620c56e5ef7d548d843aa2f350229c52859d25964fd4d57b0b32f2",
+  "skipped": {},
+  "unavailable": [],
+  "variants": [
+    {
+      "name": "baseline",
+      "root": "<baseline-2.1.0>",
+      "env": {},
+      "truncate": 8000,
+      "gitSha": "25fe500f33177e1b75aa1f46080beaaaae53de0f",
+      "gitBranch": "HEAD",
+      "dirty": false,
+      "engineVersion": "2.1.0",
+      "fingerprint": "3c4d6c1f3d2b61ee4823a5e736ac5db7c542b746af6bc19f9eef67ab8e0a369d"
+    },
+    {
+      "name": "final",
+      "root": "<final-build>",
+      "env": {
+        "REPOSQUEEZE_CACHE_DIR": "~/reposqueeze-lab/tmp/cache-bench3/final"
+      },
+      "truncate": null,
+      "gitSha": "aa02549ebca0e9f8327286c87118fc73c8e727ca",
+      "gitBranch": "HEAD",
+      "dirty": true,
+      "engineVersion": "2.2.0",
+      "fingerprint": "e6fc759f03ceb6f37a9754c5f724df9f61cadca6182b98524b4ebc9d8af83205"
+    },
+    {
+      "name": "final-none",
+      "root": "<final-build>",
+      "env": {
+        "RSQ_FEATURES": "none",
+        "REPOSQUEEZE_CACHE_DIR": "~/reposqueeze-lab/tmp/cache-bench3/final-none"
+      },
+      "truncate": null,
+      "gitSha": "aa02549ebca0e9f8327286c87118fc73c8e727ca",
+      "gitBranch": "HEAD",
+      "dirty": true,
+      "engineVersion": "2.2.0",
+      "fingerprint": "e6fc759f03ceb6f37a9754c5f724df9f61cadca6182b98524b4ebc9d8af83205"
+    }
+  ],
+  "notes": [
+    "Gold = pre-image files edited by the gold patch (tests and new files excluded); gold lines = removed lines plus context anchors around pure insertions.",
+    "Every (instance, variant) pair runs in a fresh child process on its own pristine checkout of the base commit; variants of one instance run sequentially in a hash-determined order.",
+    "Timeouts and engine errors count as zero for every retrieval metric and are reported separately."
+  ],
+  "finishedAt": "2026-10-31T18:22:14.626Z"
+}

@@ -1,0 +1,91 @@
+name: Deploy
+
+# Every push to main verifies the package and publishes it when package.json holds a version that is not on npm yet.
+# To release: bump "version" in package.json (and CHANGELOG.md), commit, push to main. Pushes that do not change
+# the version only run the checks. Re-running the workflow is safe: an already published version is skipped.
+#
+# One-time setup (repository Settings → Secrets and variables → Actions):
+#   NPM_TOKEN   npm "Automation" or granular access token with publish rights for `squeze`
+#   VSCE_PAT    (optional) Visual Studio Marketplace token; when absent the VS Code Marketplace step is skipped
+#   OVSX_PAT    (optional) Open VSX token; when absent the Open VSX step is skipped
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # GitHub release with the .vsix and .tgz
+  id-token: write # npm provenance
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      published: ${{ steps.meta.outputs.published }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm test
+      - name: Read version and check the registry
+        id: meta
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is already on npm; nothing to publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is new and will be published."
+          fi
+
+  publish:
+    needs: verify
+    if: needs.verify.outputs.published == 'false'
+    runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run build
+      - name: Package the VS Code extension
+        run: npm run package
+      - name: Pack the npm tarball
+        run: npm pack --pack-destination releases
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to the Visual Studio Marketplace
+        if: env.VSCE_PAT != ''
+        run: npx vsce publish --no-dependencies --packagePath releases/squeze-${{ needs.verify.outputs.version }}.vsix
+      - name: Publish to Open VSX
+        if: env.OVSX_PAT != ''
+        run: npx ovsx publish releases/squeze-${{ needs.verify.outputs.version }}.vsix -p "$OVSX_PAT"
+      - name: GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.verify.outputs.version }}
+          name: Squeze ${{ needs.verify.outputs.version }}
+          generate_release_notes: true
+          files: releases/*

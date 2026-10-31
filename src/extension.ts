@@ -16,48 +16,48 @@ export function activate(context: vscode.ExtensionContext) {
     const active = vscode.window.activeTextEditor?.document.uri;
     const folder = (active && vscode.workspace.getWorkspaceFolder(active)) || vscode.workspace.workspaceFolders?.[0];
     if (!folder || folder.uri.scheme !== 'file') throw new Error('Open a local repository folder first.');
-    const model=vscode.workspace.getConfiguration('reposqueezeV2').get<string>('semanticModel','');
-    const features=vscode.workspace.getConfiguration('reposqueezeV2').get<string>('features','');
+    const model=vscode.workspace.getConfiguration('squeze').get<string>('semanticModel','');
+    const features=vscode.workspace.getConfiguration('squeze').get<string>('features','');
     const key=folder.uri.fsPath+'\0'+model+'\0'+features;
     if (!repositories.has(key)) repositories.set(key,new Engine(folder.uri.fsPath,{semanticModel:model||undefined,features:features||undefined}));
     return repositories.get(key)!;
   };
-  const defaultBudget = () => vscode.workspace.getConfiguration('reposqueezeV2').get<number>('tokenBudget',3000);
+  const defaultBudget = () => vscode.workspace.getConfiguration('squeze').get<number>('tokenBudget',3000);
   const show = async (text: string) => vscode.window.showTextDocument(await vscode.workspace.openTextDocument({content:text,language:'markdown'}),{preview:true});
-  context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.pack',async () => {
+  context.subscriptions.push(vscode.commands.registerCommand('squeze.pack',async () => {
     const query = await vscode.window.showInputBox({prompt:'What do you want to understand or change?',placeHolder:'Where is retry backoff calculated?'});
     if (!query) return;
     try {
-      await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'RepoSqueeze V2: reading repository'},async () => {
+      await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'Squeze: reading repository'},async () => {
         const result = await getRepo().context(query,defaultBudget());
         await show(result.text);
-        vscode.window.showInformationMessage(`RepoSqueeze V2: ${result.stats.outputTokens.toLocaleString()} tokens (${result.stats.tokenizer}); ${(result.stats.reduction*100).toFixed(1)}% smaller than full indexed repository. This is not measured billing savings.`);
+        vscode.window.showInformationMessage(`Squeze: ${result.stats.outputTokens.toLocaleString()} tokens (${result.stats.tokenizer}); ${(result.stats.reduction*100).toFixed(1)}% smaller than full indexed repository. This is not measured billing savings.`);
       });
     } catch(e) { vscode.window.showErrorMessage(String(e)); }
   }));
-  context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.map',async () => {
+  context.subscriptions.push(vscode.commands.registerCommand('squeze.map',async () => {
     try { await show(repositoryMap(await getRepo().snapshot('__repository_map__'),defaultBudget())); } catch(e) {vscode.window.showErrorMessage(String(e));}
   }));
-  context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.graph',async () => {
+  context.subscriptions.push(vscode.commands.registerCommand('squeze.graph',async () => {
     try {
-      const html = await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'RepoSqueeze V2: building code graph'},() => runGraph(getRepo(),{mode:'html'}));
+      const html = await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'Squeze: building code graph'},() => runGraph(getRepo(),{mode:'html'}));
       // The page carries its own strict CSP (no remote content); scripts are limited to its inline hash.
-      const panel = vscode.window.createWebviewPanel('reposqueezeV2Graph','RepoSqueeze V2: Code Graph',vscode.ViewColumn.Beside,{enableScripts:true,retainContextWhenHidden:false,localResourceRoots:[]});
+      const panel = vscode.window.createWebviewPanel('squezeGraph','Squeze: Code Graph',vscode.ViewColumn.Beside,{enableScripts:true,retainContextWhenHidden:false,localResourceRoots:[]});
       panel.webview.html = html;
     } catch(e) {vscode.window.showErrorMessage(String(e));}
   }));
-  context.subscriptions.push(vscode.commands.registerCommand('reposqueeze-v2.setup',async () => {
+  context.subscriptions.push(vscode.commands.registerCommand('squeze.setup',async () => {
     try {
       const repo = getRepo();
       const dir = vscode.Uri.file(`${repo.root}/.github/instructions`);
-      const target = vscode.Uri.joinPath(dir,'reposqueeze-v2.instructions.md');
+      const target = vscode.Uri.joinPath(dir,'squeze.instructions.md');
       try { await vscode.workspace.fs.stat(target); await vscode.window.showTextDocument(target); return; } catch {}
       await vscode.workspace.fs.createDirectory(dir);
       await vscode.workspace.fs.writeFile(target,Buffer.from(`---\napplyTo: "**"\n---\n${INSTRUCTIONS}`));
       await vscode.window.showTextDocument(target);
     } catch(e) {vscode.window.showErrorMessage(String(e));}
   }));
-  context.subscriptions.push(vscode.lm.registerTool<ContextInput>('reposqueeze_v2_context',{
+  context.subscriptions.push(vscode.lm.registerTool<ContextInput>('squeze_context',{
     async invoke(options,token) {
       if (token.isCancellationRequested) throw new vscode.CancellationError();
       const pack = await getRepo().context(options.input.query,options.input.budget ?? defaultBudget());
@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
       return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(pack.text)]);
     }
   }));
-  context.subscriptions.push(vscode.lm.registerTool<ExpandInput>('reposqueeze_v2_expand',{
+  context.subscriptions.push(vscode.lm.registerTool<ExpandInput>('squeze_expand',{
     async invoke(options,token) {
       if (token.isCancellationRequested) throw new vscode.CancellationError();
       const {path,start,end,budget} = options.input;
@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
       return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(text)]);
     }
   }));
-  context.subscriptions.push(vscode.lm.registerTool<MapInput>('reposqueeze_v2_map',{
+  context.subscriptions.push(vscode.lm.registerTool<MapInput>('squeze_map',{
     async invoke(options,token) {
       if (token.isCancellationRequested) throw new vscode.CancellationError();
       const {path,query,budget} = options.input;
@@ -93,7 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
       return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(text)]);
     }
   }));
-  context.subscriptions.push(vscode.lm.registerTool<GraphInput>('reposqueeze_v2_graph',{
+  context.subscriptions.push(vscode.lm.registerTool<GraphInput>('squeze_graph',{
     async invoke(options,token) {
       if (token.isCancellationRequested) throw new vscode.CancellationError();
       const {mode,target,to,depth,budget} = options.input;

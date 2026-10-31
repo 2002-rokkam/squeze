@@ -10,24 +10,24 @@ import { INSTRUCTIONS } from './instructions.js';
 import { findSymbols, renderOutline, renderSymbols } from './symbols.js';
 import { runGraph, type GraphView } from './graph-store.js';
 
-const HELP = `RepoSqueeze V2 ${VERSION} — local, deterministic, token-budgeted repository context
+const HELP = `Squeze ${VERSION} — local, deterministic, token-budgeted repository context
 
-reposqueeze-v2 context --root REPO --query "task, error or identifiers" [--budget 3000] [--json]
-reposqueeze-v2 context --root REPO --query - < trace.txt     read the query from stdin
-reposqueeze-v2 map --root REPO [--budget 1500]               repository map
-reposqueeze-v2 map --root REPO --path src/file.ts            outline of one file (definitions with line ranges)
-reposqueeze-v2 map --root REPO --query ParseArgs             definitions whose names match
-reposqueeze-v2 expand --root REPO --path src/file.ts --start 1 --end 100
-reposqueeze-v2 graph --root REPO [--budget 1500]              code graph overview: subsystems, hubs, flows, cycles
-reposqueeze-v2 graph --root REPO --neighbors X [--depth 2]    imports, importers, callers and callees of a file or symbol
-reposqueeze-v2 graph --root REPO --path A B                   shortest dependency chain from A to B
-reposqueeze-v2 graph --root REPO --impact X [--depth 3]       what depends on X (reverse dependents)
-reposqueeze-v2 graph --root REPO --mermaid [X]                Mermaid flowchart of subsystems, or of the neighbourhood of X
-reposqueeze-v2 graph --root REPO --json | --html out.html     full export (versioned JSON) or a self-contained HTML view
-reposqueeze-v2 compact --budget 2000 < test-output.log       fold repeated log lines, keep diagnostics
-reposqueeze-v2 json < data.json                              smallest verified lossless JSON form
-reposqueeze-v2 mcp --root REPO [--tools core|all]            stdio MCP server (core = context, expand, map, graph)
-reposqueeze-v2 init --root REPO                              write .github/instructions/reposqueeze-v2.instructions.md
+squeze context --root REPO --query "task, error or identifiers" [--budget 3000] [--json]
+squeze context --root REPO --query - < trace.txt     read the query from stdin
+squeze map --root REPO [--budget 1500]               repository map
+squeze map --root REPO --path src/file.ts            outline of one file (definitions with line ranges)
+squeze map --root REPO --query ParseArgs             definitions whose names match
+squeze expand --root REPO --path src/file.ts --start 1 --end 100
+squeze graph --root REPO [--budget 1500]              code graph overview: subsystems, hubs, flows, cycles
+squeze graph --root REPO --neighbors X [--depth 2]    imports, importers, callers and callees of a file or symbol
+squeze graph --root REPO --path A B                   shortest dependency chain from A to B
+squeze graph --root REPO --impact X [--depth 3]       what depends on X (reverse dependents)
+squeze graph --root REPO --mermaid [X]                Mermaid flowchart of subsystems, or of the neighbourhood of X
+squeze graph --root REPO --json | --html out.html     full export (versioned JSON) or a self-contained HTML view
+squeze compact --budget 2000 < test-output.log       fold repeated log lines, keep diagnostics
+squeze json < data.json                              smallest verified lossless JSON form
+squeze mcp --root REPO [--tools core|all]            stdio MCP server (core = context, expand, map, graph)
+squeze init --root REPO                              write .github/instructions/squeze.instructions.md
 
 Options: --semantic-model all-minilm (opt-in local Ollama embeddings, localhost only)
          --features "-prf,-git" | none   switch retrieval features off for ablations (also RSQ_FEATURES)
@@ -100,7 +100,7 @@ async function main() {
     return;
   }
   if (command === 'init') {
-    const path = join(root, '.github/instructions/reposqueeze-v2.instructions.md');
+    const path = join(root, '.github/instructions/squeze.instructions.md');
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, `---\napplyTo: "**"\n---\n${INSTRUCTIONS}`, { flag: 'wx' });
     console.log(`Created ${path}`);
@@ -147,6 +147,6 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error(`RepoSqueeze V2: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`Squeze: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });

@@ -1,7 +1,7 @@
 {
-  "name": "reposqueeze-v2",
-  "displayName": "RepoSqueeze V2",
-  "description": "Robust, local repository context using perturbation-consensus retrieval for Copilot and MCP coding agents.",
+  "name": "squeze",
+  "displayName": "Squeze",
+  "description": "Local, deterministic, token-budgeted code context and code graph for Copilot and MCP coding agents. Cuts the tokens (credits) an agent spends reading a repository.",
   "version": "2.2.0",
   "publisher": "2002-rokkam",
   "license": "MIT",
@@ -16,6 +16,7 @@
   ],
   "main": "./dist/extension.cjs",
   "bin": {
+    "squeze": "./dist/cli.cjs",
     "reposqueeze-v2": "./dist/cli.cjs"
   },
   "files": [
@@ -26,11 +27,8 @@
     "LICENSE",
     "docs/*.md",
     "third_party",
-    "src",
-    "scripts/build.mjs",
-    "scripts/import-meta.js",
     "THIRD_PARTY_NOTICES.md",
-    "tsconfig.json"
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -38,7 +36,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "bench": "node --import tsx scripts/benchmark.ts",
     "bench:fetch": "node scripts/fetch-bench.mjs",
-    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/reposqueeze-v2-2.2.0.vsix",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-2.2.0.vsix",
     "prepare": "npm run build",
     "test:editor": "node scripts/test-extension.mjs",
     "bench:live": "node --import tsx scripts/live-eval.ts",
@@ -71,38 +69,38 @@
   "contributes": {
     "commands": [
       {
-        "command": "reposqueeze-v2.pack",
-        "title": "RepoSqueeze V2: Build Context Pack"
+        "command": "squeze.pack",
+        "title": "Squeze: Build Context Pack"
       },
       {
-        "command": "reposqueeze-v2.map",
-        "title": "RepoSqueeze V2: Show Repository Map"
+        "command": "squeze.map",
+        "title": "Squeze: Show Repository Map"
       },
       {
-        "command": "reposqueeze-v2.graph",
-        "title": "RepoSqueeze V2: Show Code Graph"
+        "command": "squeze.graph",
+        "title": "Squeze: Show Code Graph"
       },
       {
-        "command": "reposqueeze-v2.setup",
-        "title": "RepoSqueeze V2: Install Copilot Instructions"
+        "command": "squeze.setup",
+        "title": "Squeze: Install Copilot Instructions"
       }
     ],
     "configuration": {
-      "title": "RepoSqueeze V2",
+      "title": "Squeze",
       "properties": {
-        "reposqueezeV2.tokenBudget": {
+        "squeze.tokenBudget": {
           "type": "number",
           "default": 3000,
           "minimum": 256,
           "maximum": 32000,
           "description": "Maximum o200k_base tokens in a context pack. Provider token counts may differ."
         },
-        "reposqueezeV2.semanticModel": {
+        "squeze.semanticModel": {
           "type": "string",
           "default": "",
           "description": "Optional local Ollama embedding model (for example all-minilm). Sends only the strongest lexical candidates to localhost:11434 and caches vectors outside the repository. Empty disables embeddings."
         },
-        "reposqueezeV2.features": {
+        "squeze.features": {
           "type": "string",
           "default": "",
           "description": "Advanced: feature switches such as \"-prf,-git\" (same syntax as the RSQ_FEATURES environment variable). Empty keeps the defaults."
@@ -111,11 +109,11 @@
     },
     "languageModelTools": [
       {
-        "name": "reposqueeze_v2_context",
-        "displayName": "RepoSqueeze V2 Context",
+        "name": "squeze_context",
+        "displayName": "Squeze Context",
         "modelDescription": "Find the code for a task, error or question. Returns verbatim, line-cited source excerpts within a token budget. Local, read-only, not exhaustive: expand before editing.",
         "canBeReferencedInPrompt": true,
-        "toolReferenceName": "reposqueezeV2",
+        "toolReferenceName": "squeze",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -135,8 +133,8 @@
         }
       },
       {
-        "name": "reposqueeze_v2_expand",
-        "displayName": "RepoSqueeze V2 Expand",
+        "name": "squeze_expand",
+        "displayName": "Squeze Expand",
         "modelDescription": "Read exact current source lines (one-based, inclusive) of one repository file.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeezeRead",
@@ -169,8 +167,8 @@
         }
       },
       {
-        "name": "reposqueeze_v2_map",
-        "displayName": "RepoSqueeze V2 Map",
+        "name": "squeze_map",
+        "displayName": "Squeze Map",
         "modelDescription": "Repository map; with path, the outline of that file; with query, definitions whose names match.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeezeMap",
@@ -193,8 +191,8 @@
         }
       },
       {
-        "name": "reposqueeze_v2_graph",
-        "displayName": "RepoSqueeze V2 Code Graph",
+        "name": "squeze_graph",
+        "displayName": "Squeze Code Graph",
         "modelDescription": "Code graph of the repository: subsystems, dependencies, call paths, change impact. Cheaper than reading files.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeezeGraph",
@@ -203,7 +201,13 @@
           "properties": {
             "mode": {
               "type": "string",
-              "enum": ["overview", "neighbors", "path", "impact", "mermaid"],
+              "enum": [
+                "overview",
+                "neighbors",
+                "path",
+                "impact",
+                "mermaid"
+              ],
               "description": "Default overview."
             },
             "target": {
@@ -254,10 +258,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/2002-rokkam/reposqueeze-v2.git"
+    "url": "git+https://github.com/2002-rokkam/squeze.git"
   },
-  "homepage": "https://github.com/2002-rokkam/reposqueeze-v2#readme",
+  "homepage": "https://github.com/2002-rokkam/squeze#readme",
   "bugs": {
-    "url": "https://github.com/2002-rokkam/reposqueeze-v2/issues"
+    "url": "https://github.com/2002-rokkam/squeze/issues"
+  },
+  "keywords": [
+    "copilot",
+    "mcp",
+    "context",
+    "code-search",
+    "code-graph",
+    "tokens",
+    "llm",
+    "agents",
+    "tree-sitter",
+    "repository-map"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

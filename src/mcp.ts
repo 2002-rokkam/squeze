@@ -21,7 +21,7 @@ export const VERSION = '2.2.0';
 export async function serve(root: string, options: ServeOptions | string = {}) {
   const { semanticModel, tools = 'core', features } = typeof options === 'string' ? { semanticModel: options } : options;
   const repo = new Engine(root, { semanticModel, features });
-  const server = new McpServer({ name: 'reposqueeze-v2', version: VERSION });
+  const server = new McpServer({ name: 'squeze', version: VERSION });
   // Bounds are enforced by the handlers (checkBudget, expand) so the advertised schema stays small.
   const budget = z.number().optional();
   const limit = (value: number | undefined, fallback = 3000) => checkBudget(value ?? fallback);
@@ -29,7 +29,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
   const annotations = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
 
   server.registerTool(
-    'reposqueeze_v2_context',
+    'squeze_context',
     {
       description: 'Find the code for a task, error or question. Returns verbatim, line-cited source excerpts within a token budget. Local, read-only, not exhaustive: expand before editing.',
       inputSchema: {
@@ -42,7 +42,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
     async ({ query, budget, known }) => result((await repo.context(query, limit(budget), (known ?? []).slice(0, 200))).text),
   );
   server.registerTool(
-    'reposqueeze_v2_expand',
+    'squeze_expand',
     {
       description: 'Read exact current source lines (one-based, inclusive) of one repository file.',
       inputSchema: { path: z.string(), start: z.number(), end: z.number(), budget },
@@ -51,7 +51,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
     async ({ path, start, end, budget }) => result(await repo.expandRange(path, start, end, limit(budget))),
   );
   server.registerTool(
-    'reposqueeze_v2_map',
+    'squeze_map',
     {
       description: 'Repository map; with path, the outline of that file; with query, definitions whose names match.',
       inputSchema: { budget, path: z.string().optional(), query: z.string().optional() },
@@ -70,7 +70,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
     },
   );
   server.registerTool(
-    'reposqueeze_v2_graph',
+    'squeze_graph',
     {
       description: 'Code graph of the repository: subsystems, dependencies, call paths, change impact. Cheaper than reading files.',
       inputSchema: {
@@ -86,7 +86,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
   );
   if (tools === 'all') {
     server.registerTool(
-      'reposqueeze_v2_compact',
+      'squeze_compact',
       {
         description: 'Fold repeated log lines and keep diagnostics within a budget. Lossy output is marked. Saves tokens only for text that has not entered the context yet.',
         inputSchema: { text: z.string(), budget },
@@ -95,7 +95,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
       async ({ text, budget }) => result(compactLog(text, limit(budget, 2000)).text),
     );
     server.registerTool(
-      'reposqueeze_v2_json',
+      'squeze_json',
       {
         description: 'Convert JSON to the smallest verified lossless form (JSON, minified or TOON). Saves tokens only for data that has not entered the context yet.',
         inputSchema: { text: z.string() },
