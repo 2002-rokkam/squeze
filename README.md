@@ -31,9 +31,6 @@ npx -y squeze-cli@2.2.0 --help     # or run without installing
 
 > Note: `squeze-cli@2.2.0` is the published release. The `latest` tag still points to a placeholder while npm reviews 2.2.1; without `@2.2.0` `npm install -g squeze-cli` installs the placeholder and gives no command. Drop the pin once `2.2.1` is approved.
 
-```sh
-```
-
 From source:
 
 ```sh
