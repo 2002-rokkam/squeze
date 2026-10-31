@@ -69,7 +69,7 @@ function lineLocator(text: string): (offset: number) => number {
 const lineBefore = (text: string, offset: number): string => text.slice(text.lastIndexOf('\n', offset - 1) + 1, offset);
 const inLineComment = (text: string, offset: number, markers: RegExp): boolean => markers.test(lineBefore(text, offset));
 
-const JS_IMPORT = /(?:^|[;{}\s])(?:import|export)\s+(?:type\s+)?(?:[\w$*{}\s,]{0,600}?\s)?from\s*(['"])([^'"\n]{1,300})\1|(?:^|[;{}\s])import\s*(['"])([^'"\n]{1,300})\3|\b(?:require|import)\s*\(\s*(['"])([^'"\n]{1,300})\5\s*\)/gm;
+const JS_IMPORT = /(?:^|[;{}\s])(?:import|export)\s+(?:type\s+)?(?:[\p{L}\p{N}_$*{}\s,]{0,600}?\s)?from\s*(['"])([^'"\n]{1,300})\1|(?:^|[;{}\s])import\s*(['"])([^'"\n]{1,300})\3|\b(?:require|import)\s*\(\s*(['"])([^'"\n]{1,300})\5\s*\)/gmu;
 
 function extractJs(text: string): ImportRef[] {
   const out: ImportRef[] = [];

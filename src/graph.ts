@@ -179,6 +179,14 @@ function keptDefinitions(defs: readonly Definition[], limit: number): number[] {
     .sort((a, b) => a - b);
 }
 
+/** Names used as `qualifier.Name` in a text (Go package members). */
+function qualifiedMembers(text: string, qualifier: string): Set<string> {
+  const names = new Set<string>();
+  if (!/^\w+$/.test(qualifier)) return names;
+  for (const match of text.matchAll(new RegExp(`\\b${qualifier}\\.([A-Za-z_]\\w*)`, 'g'))) names.add(match[1]);
+  return names;
+}
+
 export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): CodeGraph {
   const { maxExternals = 40, maxDefsPerFile = 60, maxDefNodes = 250_000 } = options;
   const parsedByPath = new Map<string, SourceFile>();
@@ -253,9 +261,11 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Code
       stats.importsResolved++;
       let confidence: Confidence = 'EXTRACTED';
       if (resolution.package) {
-        // A package import names a directory: keep the files that define something this file mentions.
+        // A package import names a directory: keep the files that define something this file mentions. Go code
+        // mentions members as `pkg.Name`, which the chunk references do not record, so they are read from the text.
         refs ??= referenced();
-        const mentioned = targets.filter(path => topLevelNames(fileId.get(path)!).some(name => refs!.has(name)));
+        const members = info.language === 'go' ? qualifiedMembers(source.text, ref.spec.split('/').pop()!) : undefined;
+        const mentioned = targets.filter(path => topLevelNames(fileId.get(path)!).some(name => (members ?? refs!).has(name)));
         targets = (mentioned.length ? mentioned : targets).slice(0, MAX_PACKAGE_FILES);
         confidence = 'INFERRED';
       }

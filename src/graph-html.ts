@@ -136,7 +136,7 @@ export function renderHtml(graph: CodeGraph, options: HtmlOptions = {}): string 
   const csp = `default-src 'none'; style-src ${sha(style)}; script-src ${sha(SCRIPT)}; base-uri 'none'; form-action 'none'`;
   const summary = `${graph.stats.files} files · ${graph.stats.definitions} defs · ${graph.stats.importEdges} imports · ${graph.stats.referenceEdges} name-based refs · ${graph.subsystems.length} subsystems${shown.length < graph.fileCount ? ` · showing top ${shown.length} files` : ''}${graph.partial ? ' · PARTIAL graph' : ''}`;
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${escapeHtml(csp)}"><title>${title}</title><style>${style}</style></head>
+<html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${title}</title><style>${style}</style></head>
 <body><div id="wrap"><div id="side"><h1>${title}</h1><p>${escapeHtml(summary)}</p><p>Click a node to highlight its neighbours; click the background to reset. Solid = import, dashed = name-based reference.</p>${legend}</div>
 <svg id="g" viewBox="${round(minX)} ${round(minY)} ${round(width)} ${round(height)}" preserveAspectRatio="xMidYMid meet">${parts.join('')}</svg></div>
 <script>${SCRIPT}</script></body></html>
