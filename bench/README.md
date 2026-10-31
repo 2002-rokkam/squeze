@@ -203,6 +203,29 @@ huge repositories with few instances, at the price that variants see no git hist
 * Gold patches and issues are public and may be memorised by language models; the evaluated engines are
   model-free, so this does not affect them, but do not reuse the numbers for LLM agents.
 
+## Token-cost simulation (`bench/tokencost/`)
+
+Estimates the context tokens (o200k_base) an agent consumes to *obtain a gold file* of each DEV instance. It reads
+packs from earlier `bench/run.ts` output directories (`--pack NAME=DIR:VARIANT`, repeatable) and measures the grep
+strategies on a pristine checkout of the base commit.
+
+```bash
+node --import tsx bench/tokencost/run.ts --dataset lite,multilingual --split dev --repos <same list as the pack run> --sample 60 \
+  --pack S2=~/reposqueeze-lab/results/<run>:ripgrep-naive --pack S3=<dir>:baseline --pack S4=<dir>:final --out <dir>/tokencost
+```
+
+* **S1** grep agent: `rg` for up to 10 distinctive terms of the issue (identifiers first), files ranked by rare-term-weighted
+  distinct-term matches; the agent reads whole files in rank order until a gold file was read (cap 20 files). Tokens = the
+  grep listings (top 40 files per term) + every file read. **S1b**: the same agent that skips test and non-code files.
+* **Pack strategies** (`--pack`): tokens = the pack (harness-counted); gold is reached when a gold file has a shown excerpt
+  (pointers do not count). `NAME+expand` adds one follow-up read of the best pointer (else the top-ranked evidence item),
+  at most 120 lines, when gold was not shown.
+* Report: reach rate; mean/median tokens over reached instances; tokens per reached instance (all spend / instances reached);
+  paired bootstrap CIs (10,000 resamples, seed 1729) of cost-per-reach ratio and of the geometric-mean token ratio on
+  instances both strategies reach; exact McNemar on reach.
+* It is a proxy for agent behaviour, not a measured bill: no model reasoning tokens, no tool-call overhead, one fixed
+  grep policy. Failed or missing pack rows count as not reached with 0 tokens and are reported.
+
 ## Dev/test discipline
 
 Tune, debug and iterate only on DEV. The held-out TEST split is executed exactly once, by the orchestrator, at
@@ -225,6 +248,7 @@ bench/lib/metrics.ts stats.ts     metrics, bootstrap, exact McNemar
 bench/lib/report.ts render.ts     aggregation and markdown
 bench/lib/execute.ts load.ts      orchestration, resume, load guard
 bench/variants/ripgrep-naive/     reference variant
+bench/tokencost/                  token-cost simulation (accounting, terms, grep, summary, render, run)
 bench/splits.json                 dev/test assignment per dataset
 tests/bench-*.test.ts             unit and integration tests (run under npm test)
 ```
