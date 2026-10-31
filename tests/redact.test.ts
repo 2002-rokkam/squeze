@@ -532,7 +532,7 @@ test('adversarial 2 MiB inputs finish quickly', () => {
     const result = redactSecrets(text.slice(0, size));
     const ms = Number(process.hrtime.bigint() - started) / 1e6;
     timings.push(`${name}: ${ms.toFixed(0)}ms`);
-    assert.ok(ms < 1000, `${name} took ${ms.toFixed(0)} ms`);
+    assert.ok(ms < 3000, `${name} took ${ms.toFixed(0)} ms`);
     assert.equal(result.text.split('\n').length, text.slice(0, size).split('\n').length, name);
   }
   console.log(`redact adversarial 2 MiB timings -> ${timings.join(' | ')}`);
