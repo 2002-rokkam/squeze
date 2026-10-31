@@ -1,8 +1,8 @@
 {
-  "name": "squeze",
+  "name": "squeze-cli",
   "displayName": "Squeze",
   "description": "Local, deterministic, token-budgeted code context and code graph for Copilot and MCP coding agents. Cuts the tokens (credits) an agent spends reading a repository.",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "publisher": "2002-rokkam",
   "license": "MIT",
   "type": "module",
@@ -17,6 +17,7 @@
   "main": "./dist/extension.cjs",
   "bin": {
     "squeze": "dist/cli.cjs",
+    "squeze-cli": "dist/cli.cjs",
     "reposqueeze-v2": "dist/cli.cjs"
   },
   "files": [
@@ -36,7 +37,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "bench": "node --import tsx scripts/benchmark.ts",
     "bench:fetch": "node scripts/fetch-bench.mjs",
-    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-2.2.0.vsix",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-cli-2.2.1.vsix",
     "prepare": "npm run build",
     "test:editor": "node scripts/test-extension.mjs",
     "bench:live": "node --import tsx scripts/live-eval.ts",

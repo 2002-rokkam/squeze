@@ -3,7 +3,7 @@
 **Local, deterministic, token-budgeted repository context for coding agents.**
 Give it a task, an error or a stack trace; it returns the few verbatim, line-cited source excerpts that matter, inside a token budget you choose. It runs as a CLI, an MCP server and a VS Code / GitHub Copilot tool. No model calls, no network, no telemetry.
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green) ![version](https://img.shields.io/badge/version-2.2.0-informational)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green) ![version](https://img.shields.io/badge/version-2.2.1-informational)
 
 > **Status of the evidence.** Every number in this document comes from a script in this repository and a raw result file you can inspect. Section [Evidence](#evidence) lists what was measured, how, the confidence intervals and what was **not** proven. Nothing here claims 100% accuracy, answer quality or billing savings.
 
@@ -25,8 +25,8 @@ An agent that reads whole files to answer "where is retry backoff computed?" pay
 Requires Node.js 20.19 or newer.
 
 ```sh
-npm install -g squeze          # CLI: `squeze`
-npx squeze --help              # or run without installing
+npm install -g squeze-cli          # installs the `squeze` command
+npx squeze-cli --help              # or run without installing
 ```
 
 From source:
@@ -38,16 +38,16 @@ npm ci            # installs and builds (dist/, assets/)
 npm link          # exposes the `squeze` command
 ```
 
-The older `reposqueeze-v2` command name still works as an alias. Tool names changed from `reposqueeze_v2_*` to `squeze_*`, and the VS Code extension ID is `2002-rokkam.squeze`.
+The older `reposqueeze-v2` command name still works as an alias. Tool names changed from `reposqueeze_v2_*` to `squeze_*`, and the VS Code extension ID is `2002-rokkam.squeze-cli`.
 
 ### VS Code
 
 ```sh
-npm run package                                  # writes releases/squeze-2.2.0.vsix
-code --install-extension releases/squeze-2.2.0.vsix
+npm run package                                  # writes releases/squeze-cli-2.2.1.vsix
+code --install-extension releases/squeze-cli-2.2.1.vsix
 ```
 
-Enable **Squeze V2 Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
+Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
 
 ### MCP
 
@@ -292,6 +292,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 - Above 5,000 files a file-level sketch chooses the candidates that get parsed. Timestamp-preserving edits need `REPOSQUEEZE_REFRESH_INDEX=1`.
 - Safety limits: 100,000 files, 2 GiB indexed text, 2 MiB per file, depth 60. Exceeding one is reported in the output.
 - Token counts use `o200k_base`; provider counts differ.
+- Windows: the CLI and extension are built for it, but some benchmark and chunker tests still assume `/` path separators, so the Windows CI job is informational.
 
 ## Reproduce
 

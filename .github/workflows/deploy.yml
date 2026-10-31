@@ -1,6 +1,7 @@
 name: Deploy
 
-# Every push to main verifies the package and publishes it when package.json holds a version that is not on npm yet.
+# Every push to main verifies the package and stages it for npm when package.json holds a version that is not live on npm yet.
+# Approval of the staged version (2FA) is done by a maintainer on npmjs.com.
 # To release: bump "version" in package.json (and CHANGELOG.md), commit, push to main. Pushes that do not change
 # the version only run the checks. Re-running the workflow is safe: an already published version is skipped.
 #
@@ -76,16 +77,20 @@ jobs:
         run: npm run package
       - name: Pack the npm tarball
         run: npm pack --pack-destination releases
-      - name: Publish to npm
-        run: npm publish --access public --provenance
+      - name: Stage the package on npm
+        # The npm account uses staged publishing: this uploads the version, and a maintainer approves it with 2FA
+        # (npmjs.com -> package -> Staged Packages, or `npm stage approve <id>`). Staging needs npm >= 11.15.
+        run: |
+          npm install -g npm@latest
+          npm stage publish --access public || echo "::warning::npm stage publish failed or the version is already staged"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish to the Visual Studio Marketplace
         if: env.VSCE_PAT != ''
-        run: npx vsce publish --no-dependencies --packagePath releases/squeze-${{ needs.verify.outputs.version }}.vsix
+        run: npx vsce publish --no-dependencies --packagePath releases/squeze-cli-${{ needs.verify.outputs.version }}.vsix
       - name: Publish to Open VSX
         if: env.OVSX_PAT != ''
-        run: npx ovsx publish releases/squeze-${{ needs.verify.outputs.version }}.vsix -p "$OVSX_PAT"
+        run: npx ovsx publish releases/squeze-cli-${{ needs.verify.outputs.version }}.vsix -p "$OVSX_PAT"
       - name: GitHub release
         uses: softprops/action-gh-release@v2
         with:

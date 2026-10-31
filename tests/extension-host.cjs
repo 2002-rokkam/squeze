@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const vscode = require('vscode');
 exports.run = async function () {
-  const extension=vscode.extensions.getExtension('2002-rokkam.squeze');
+  const extension=vscode.extensions.getExtension('2002-rokkam.squeze-cli');
   assert(extension,'extension is installed in host');
   await extension.activate();assert(extension.isActive);
   const names=vscode.lm.tools.map(t=>t.name);
