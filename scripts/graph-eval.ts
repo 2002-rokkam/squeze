@@ -125,7 +125,9 @@ async function correctness() {
   emit(result);
 }
 
-const IMPORT_LINE = /^\s*(?:import|from|require|use|#\s*include|using|package|pub\s+mod|mod|extern\s+crate|load)\b|\brequire\s*\(|\bimport\s*\(/;
+// Import lines in the languages the graph resolves. Go groups imports in `import ( ... )` blocks, where a line is
+// only the quoted path (optionally with an alias).
+const IMPORT_LINE = /^\s*(?:import|from|require|use|#\s*include|using|package|pub\s+mod|mod|extern\s+crate|load)\b|\brequire\s*\(|\bimport\s*\(|^\s*(?:[\w.]+\s+)?"[\w.\-~/@]+"\s*$/;
 
 async function tokenStudy() {
   const { snapshot, graph, texts } = await load();

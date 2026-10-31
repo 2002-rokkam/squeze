@@ -1,0 +1,203 @@
+{
+  "repo": "BurntSushi__ripgrep",
+  "files": 106,
+  "questions": 20,
+  "byType": {
+    "impact": {
+      "n": 8,
+      "graphMedian": 270,
+      "graphMean": 245,
+      "readMedian": 181406,
+      "readMean": 158437,
+      "grepMedian": 2407,
+      "grepMean": 2858,
+      "reductionVsRead": 0.9985116258558151,
+      "reductionVsGrep": 0.8878271707519734,
+      "importerPrecision": 0.38660714285714287,
+      "importerRecall": 0.7083333333333333
+    },
+    "neighbors": {
+      "n": 5,
+      "graphMedian": 286,
+      "graphMean": 303,
+      "readMedian": 89912,
+      "readMean": 147674,
+      "grepMedian": 3587,
+      "grepMean": 14282,
+      "reductionVsRead": 0.9968191120206424,
+      "reductionVsGrep": 0.9202676331195986
+    },
+    "path": {
+      "n": 6,
+      "graphMedian": 67,
+      "graphMean": 71,
+      "readMedian": 7725,
+      "readMean": 21850,
+      "grepMedian": 7725,
+      "grepMean": 21850,
+      "reductionVsRead": 0.991326860841424,
+      "reductionVsGrep": 0.991326860841424
+    },
+    "overview": {
+      "n": 1,
+      "graphMedian": 1064,
+      "graphMean": 1064,
+      "readMedian": 104927,
+      "readMean": 104927,
+      "grepMedian": 925,
+      "grepMean": 925,
+      "reductionVsRead": 0.9898596166858864,
+      "reductionVsGrep": -0.1502702702702703
+    }
+  },
+  "overall": {
+    "graphMedian": 157,
+    "readMedian": 82353,
+    "grepMedian": 3876,
+    "graphMean": 248,
+    "readMean": 112095,
+    "grepMean": 11315
+  },
+  "detail": [
+    {
+      "type": "impact",
+      "question": "what depends on crates/cli/src/escape.rs",
+      "graphTokens": 104,
+      "readTokens": 139305,
+      "grepTokens": 1245
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/globset/src/lib.rs",
+      "graphTokens": 275,
+      "readTokens": 181406,
+      "grepTokens": 3282
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/searcher/src/lines.rs",
+      "graphTokens": 305,
+      "readTokens": 317130,
+      "grepTokens": 7816
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/printer/src/lib.rs",
+      "graphTokens": 262,
+      "readTokens": 192551,
+      "grepTokens": 3876
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/printer/src/jsont.rs",
+      "graphTokens": 157,
+      "readTokens": 9706,
+      "grepTokens": 274
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/searcher/src/testutil.rs",
+      "graphTokens": 286,
+      "readTokens": 22492,
+      "grepTokens": 87
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/ignore/src/overrides.rs",
+      "graphTokens": 270,
+      "readTokens": 212355,
+      "grepTokens": 2407
+    },
+    {
+      "type": "impact",
+      "question": "what depends on crates/searcher/src/lib.rs",
+      "graphTokens": 297,
+      "readTokens": 192551,
+      "grepTokens": 3876
+    },
+    {
+      "type": "neighbors",
+      "question": "what does crates/regex/src/strip.rs import and who imports it",
+      "graphTokens": 136,
+      "readTokens": 57806,
+      "grepTokens": 1617
+    },
+    {
+      "type": "neighbors",
+      "question": "what does crates/core/flags/parse.rs import and who imports it",
+      "graphTokens": 286,
+      "readTokens": 168358,
+      "grepTokens": 4158
+    },
+    {
+      "type": "neighbors",
+      "question": "what does crates/core/flags/defs.rs import and who imports it",
+      "graphTokens": 693,
+      "readTokens": 77854,
+      "grepTokens": 61344
+    },
+    {
+      "type": "neighbors",
+      "question": "what does crates/printer/src/hyperlink/aliases.rs import and who imports it",
+      "graphTokens": 93,
+      "readTokens": 89912,
+      "grepTokens": 703
+    },
+    {
+      "type": "neighbors",
+      "question": "what does crates/core/search.rs import and who imports it",
+      "graphTokens": 309,
+      "readTokens": 344441,
+      "grepTokens": 3587
+    },
+    {
+      "type": "path",
+      "question": "how does crates/printer/src/util.rs reach crates/regex/src/ast.rs",
+      "graphTokens": 67,
+      "readTokens": 7439,
+      "grepTokens": 7439
+    },
+    {
+      "type": "path",
+      "question": "how does crates/searcher/src/testutil.rs reach crates/regex/src/ban.rs",
+      "graphTokens": 69,
+      "readTokens": 7725,
+      "grepTokens": 7725
+    },
+    {
+      "type": "path",
+      "question": "how does crates/regex/src/literal.rs reach crates/regex/src/non_matching.rs",
+      "graphTokens": 57,
+      "readTokens": 14705,
+      "grepTokens": 14705
+    },
+    {
+      "type": "path",
+      "question": "how does crates/core/flags/complete/bash.rs reach crates/core/messages.rs",
+      "graphTokens": 90,
+      "readTokens": 82353,
+      "grepTokens": 82353
+    },
+    {
+      "type": "path",
+      "question": "how does crates/printer/src/util.rs reach crates/searcher/src/line_buffer.rs",
+      "graphTokens": 57,
+      "readTokens": 14292,
+      "grepTokens": 14292
+    },
+    {
+      "type": "path",
+      "question": "how does crates/core/flags/complete/mod.rs reach crates/core/flags/doc/man.rs",
+      "graphTokens": 87,
+      "readTokens": 4583,
+      "grepTokens": 4583
+    },
+    {
+      "type": "overview",
+      "question": "list subsystems",
+      "graphTokens": 1064,
+      "readTokens": 104927,
+      "grepTokens": 925
+    }
+  ]
+}

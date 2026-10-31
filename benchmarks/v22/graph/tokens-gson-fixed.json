@@ -1,0 +1,203 @@
+{
+  "repo": "gson",
+  "files": 264,
+  "questions": 20,
+  "byType": {
+    "impact": {
+      "n": 8,
+      "graphMedian": 1124,
+      "graphMean": 995,
+      "readMedian": 26644,
+      "readMean": 45810,
+      "grepMedian": 571,
+      "grepMean": 2542,
+      "reductionVsRead": 0.9578141420207176,
+      "reductionVsGrep": -0.9684763572679509,
+      "importerPrecision": 1,
+      "importerRecall": 1
+    },
+    "neighbors": {
+      "n": 5,
+      "graphMedian": 420,
+      "graphMean": 347,
+      "readMedian": 1488,
+      "readMean": 14618,
+      "grepMedian": 1355,
+      "grepMean": 1174,
+      "reductionVsRead": 0.717741935483871,
+      "reductionVsGrep": 0.6900369003690037
+    },
+    "path": {
+      "n": 6,
+      "graphMedian": 117,
+      "graphMean": 120,
+      "readMedian": 19436,
+      "readMean": 19789,
+      "grepMedian": 19436,
+      "grepMean": 19789,
+      "reductionVsRead": 0.9939802428483226,
+      "reductionVsGrep": 0.9939802428483226
+    },
+    "overview": {
+      "n": 1,
+      "graphMedian": 1402,
+      "graphMean": 1402,
+      "readMedian": 62472,
+      "readMean": 62472,
+      "grepMedian": 4421,
+      "grepMean": 4421,
+      "reductionVsRead": 0.97755794595979,
+      "reductionVsGrep": 0.6828771771092512
+    }
+  },
+  "overall": {
+    "graphMedian": 420,
+    "readMedian": 19436,
+    "grepMedian": 1699,
+    "graphMean": 591,
+    "readMean": 31039,
+    "grepMean": 7468
+  },
+  "detail": [
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/test/java/com/google/gson/common/MoreAsserts.java",
+      "graphTokens": 549,
+      "readTokens": 26644,
+      "grepTokens": 1525
+    },
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/main/java/com/google/gson/stream/JsonWriter.java",
+      "graphTokens": 1136,
+      "readTokens": 102182,
+      "grepTokens": 10889
+    },
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/main/java/com/google/gson/internal/ReflectionAccessFilterHelper.java",
+      "graphTokens": 1184,
+      "readTokens": 11163,
+      "grepTokens": 330
+    },
+    {
+      "type": "impact",
+      "question": "what depends on test-shrinker/src/main/java/com/example/TestExecutor.java",
+      "graphTokens": 72,
+      "readTokens": 3049,
+      "grepTokens": 571
+    },
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/main/java/com/google/gson/FieldNamingStrategy.java",
+      "graphTokens": 1103,
+      "readTokens": 46912,
+      "grepTokens": 552
+    },
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/main/java/com/google/gson/JsonNull.java",
+      "graphTokens": 1377,
+      "readTokens": 68355,
+      "grepTokens": 2755
+    },
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/main/java/com/google/gson/internal/bind/DefaultDateTypeAdapter.java",
+      "graphTokens": 1124,
+      "readTokens": 14023,
+      "grepTokens": 567
+    },
+    {
+      "type": "impact",
+      "question": "what depends on gson/src/main/java/com/google/gson/JsonDeserializer.java",
+      "graphTokens": 1413,
+      "readTokens": 94154,
+      "grepTokens": 3149
+    },
+    {
+      "type": "neighbors",
+      "question": "what does gson/src/main/java/com/google/gson/internal/sql/SqlTimestampTypeAdapter.java import and who imports it",
+      "graphTokens": 175,
+      "readTokens": 1200,
+      "grepTokens": 452
+    },
+    {
+      "type": "neighbors",
+      "question": "what does gson/src/main/java/com/google/gson/internal/bind/DefaultDateTypeAdapter.java import and who imports it",
+      "graphTokens": 420,
+      "readTokens": 15628,
+      "grepTokens": 1699
+    },
+    {
+      "type": "neighbors",
+      "question": "what does gson/src/main/java/com/google/gson/JsonSerializationContext.java import and who imports it",
+      "graphTokens": 432,
+      "readTokens": 53420,
+      "grepTokens": 874
+    },
+    {
+      "type": "neighbors",
+      "question": "what does proto/src/test/java/com/google/gson/protobuf/functional/StructTypeAdapterTest.java import and who imports it",
+      "graphTokens": 284,
+      "readTokens": 1355,
+      "grepTokens": 1355
+    },
+    {
+      "type": "neighbors",
+      "question": "what does gson/src/test/java/com/google/gson/functional/TypeAdapterRuntimeTypeWrapperTest.java import and who imports it",
+      "graphTokens": 423,
+      "readTokens": 1488,
+      "grepTokens": 1488
+    },
+    {
+      "type": "path",
+      "question": "how does proto/src/test/java/com/google/gson/protobuf/functional/ProtosWithAnnotationsAndJsonNamesTest.java reach gson/src/main/java/com/google/gson/internal/bind/util/ISO8601Utils.java",
+      "graphTokens": 137,
+      "readTokens": 17865,
+      "grepTokens": 17865
+    },
+    {
+      "type": "path",
+      "question": "how does proto/src/main/java/com/google/gson/protobuf/ProtoTypeAdapter.java reach gson/src/main/java/com/google/gson/stream/JsonReader.java",
+      "graphTokens": 110,
+      "readTokens": 25090,
+      "grepTokens": 25090
+    },
+    {
+      "type": "path",
+      "question": "how does gson/src/test/java/com/google/gson/internal/sql/SqlTypesGsonTest.java reach gson/src/main/java/com/google/gson/internal/reflect/ReflectionHelper.java",
+      "graphTokens": 117,
+      "readTokens": 21780,
+      "grepTokens": 21780
+    },
+    {
+      "type": "path",
+      "question": "how does proto/src/test/java/com/google/gson/protobuf/functional/ProtosWithAnnotationsTest.java reach gson/src/main/java/com/google/gson/ExclusionStrategy.java",
+      "graphTokens": 117,
+      "readTokens": 19436,
+      "grepTokens": 19436
+    },
+    {
+      "type": "path",
+      "question": "how does metrics/src/main/java/com/google/gson/metrics/CollectionsDeserializationBenchmark.java reach gson/src/main/java/com/google/gson/JsonElement.java",
+      "graphTokens": 107,
+      "readTokens": 20489,
+      "grepTokens": 20489
+    },
+    {
+      "type": "path",
+      "question": "how does test-shrinker/src/main/java/com/example/ClassWithVersionAnnotations.java reach gson/src/main/java/com/google/gson/internal/JsonReaderInternalAccess.java",
+      "graphTokens": 134,
+      "readTokens": 14073,
+      "grepTokens": 14073
+    },
+    {
+      "type": "overview",
+      "question": "list subsystems",
+      "graphTokens": 1402,
+      "readTokens": 62472,
+      "grepTokens": 4421
+    }
+  ]
+}

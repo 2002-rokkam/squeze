@@ -1,0 +1,203 @@
+{
+  "repo": "expressjs__express",
+  "files": 142,
+  "questions": 20,
+  "byType": {
+    "impact": {
+      "n": 8,
+      "graphMedian": 76,
+      "graphMean": 167,
+      "readMedian": 30015,
+      "readMean": 26017,
+      "grepMedian": 1080,
+      "grepMean": 2608,
+      "reductionVsRead": 0.9974679327003165,
+      "reductionVsGrep": 0.9296296296296296,
+      "importerPrecision": 0.875,
+      "importerRecall": 0.6036764705882353
+    },
+    "neighbors": {
+      "n": 5,
+      "graphMedian": 57,
+      "graphMean": 53,
+      "readMedian": 3595,
+      "readMean": 3195,
+      "grepMedian": 121,
+      "grepMean": 500,
+      "reductionVsRead": 0.9841446453407511,
+      "reductionVsGrep": 0.5289256198347108
+    },
+    "path": {
+      "n": 6,
+      "graphMedian": 50,
+      "graphMean": 50,
+      "readMedian": 4260,
+      "readMean": 4335,
+      "grepMedian": 4260,
+      "grepMean": 4335,
+      "reductionVsRead": 0.9882629107981221,
+      "reductionVsGrep": 0.9882629107981221
+    },
+    "overview": {
+      "n": 1,
+      "graphMedian": 830,
+      "graphMean": 830,
+      "readMedian": 17851,
+      "readMean": 17851,
+      "grepMedian": 901,
+      "grepMean": 901,
+      "reductionVsRead": 0.95350400537785,
+      "reductionVsGrep": 0.07880133185349614
+    }
+  },
+  "overall": {
+    "graphMedian": 57,
+    "readMedian": 5515,
+    "grepMedian": 1172,
+    "graphMean": 136,
+    "readMean": 13398,
+    "grepMean": 2514
+  },
+  "detail": [
+    {
+      "type": "impact",
+      "question": "what depends on examples/mvc/db.js",
+      "graphTokens": 64,
+      "readTokens": 3325,
+      "grepTokens": 420
+    },
+    {
+      "type": "impact",
+      "question": "what depends on index.js",
+      "graphTokens": 425,
+      "readTokens": 30015,
+      "grepTokens": 776
+    },
+    {
+      "type": "impact",
+      "question": "what depends on test/support/utils.js",
+      "graphTokens": 95,
+      "readTokens": 49349,
+      "grepTokens": 1817
+    },
+    {
+      "type": "impact",
+      "question": "what depends on test/support/tmpl.js",
+      "graphTokens": 47,
+      "readTokens": 6234,
+      "grepTokens": 1080
+    },
+    {
+      "type": "impact",
+      "question": "what depends on examples/content-negotiation/db.js",
+      "graphTokens": 70,
+      "readTokens": 3325,
+      "grepTokens": 420
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/express.js",
+      "graphTokens": 454,
+      "readTokens": 34198,
+      "grepTokens": 12440
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/view.js",
+      "graphTokens": 76,
+      "readTokens": 32337,
+      "grepTokens": 2090
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/utils.js",
+      "graphTokens": 101,
+      "readTokens": 49349,
+      "grepTokens": 1817
+    },
+    {
+      "type": "neighbors",
+      "question": "what does test/Route.js import and who imports it",
+      "graphTokens": 57,
+      "readTokens": 6388,
+      "grepTokens": 1545
+    },
+    {
+      "type": "neighbors",
+      "question": "what does examples/resource/index.js import and who imports it",
+      "graphTokens": 60,
+      "readTokens": 5461,
+      "grepTokens": 695
+    },
+    {
+      "type": "neighbors",
+      "question": "what does examples/multi-router/index.js import and who imports it",
+      "graphTokens": 68,
+      "readTokens": 408,
+      "grepTokens": 119
+    },
+    {
+      "type": "neighbors",
+      "question": "what does examples/mvc/controllers/main/index.js import and who imports it",
+      "graphTokens": 32,
+      "readTokens": 3595,
+      "grepTokens": 18
+    },
+    {
+      "type": "neighbors",
+      "question": "what does test/acceptance/hello-world.js import and who imports it",
+      "graphTokens": 46,
+      "readTokens": 121,
+      "grepTokens": 121
+    },
+    {
+      "type": "path",
+      "question": "how does test/res.jsonp.js reach lib/application.js",
+      "graphTokens": 50,
+      "readTokens": 6691,
+      "grepTokens": 6691
+    },
+    {
+      "type": "path",
+      "question": "how does test/res.get.js reach lib/utils.js",
+      "graphTokens": 57,
+      "readTokens": 5515,
+      "grepTokens": 5515
+    },
+    {
+      "type": "path",
+      "question": "how does test/req.xhr.js reach lib/application.js",
+      "graphTokens": 52,
+      "readTokens": 4260,
+      "grepTokens": 4260
+    },
+    {
+      "type": "path",
+      "question": "how does test/req.ip.js reach lib/express.js",
+      "graphTokens": 42,
+      "readTokens": 1198,
+      "grepTokens": 1198
+    },
+    {
+      "type": "path",
+      "question": "how does test/req.route.js reach lib/response.js",
+      "graphTokens": 52,
+      "readTokens": 7176,
+      "grepTokens": 7176
+    },
+    {
+      "type": "path",
+      "question": "how does test/req.accepts.js reach lib/express.js",
+      "graphTokens": 44,
+      "readTokens": 1172,
+      "grepTokens": 1172
+    },
+    {
+      "type": "overview",
+      "question": "list subsystems",
+      "graphTokens": 830,
+      "readTokens": 17851,
+      "grepTokens": 901
+    }
+  ]
+}

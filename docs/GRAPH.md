@@ -34,4 +34,4 @@ impact of binding/binding.go: 7 files via imports within 3 hops (direct 6), +17 
 d1 (6): context.go, mode.go, context_test.go, deprecated.go, deprecated_test.go, mode_test.go
 ```
 
-Measured accuracy, token cost and build time: [benchmarks/v22/graph.md](../benchmarks/v22/graph.md). Limits: name-based references over-report importers in some repositories (precision 59% on average), Rust `use` of items is partly unresolved, and cascade-mode graphs on repositories above 5,000 files cover only the parsed candidates.
+Measured accuracy, token cost and build time: [benchmarks/v22/graph.md](../benchmarks/v22/graph.md). Limits: Go imports resolve to one file instead of the whole package, so impact precision is 25% on gin and 39% on ripgrep (75% on average over six repositories), Rust `use` of items is partly unresolved, and cascade-mode graphs on repositories above 5,000 files cover only the parsed candidates.

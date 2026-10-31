@@ -21,15 +21,17 @@ All 300 sampled edges verified. This checks *existence and textual presence*, no
 
 6 repositories (express, flask, gin, gson, ripgrep, thor), about 20 questions each. "Read whole files" = the agent opens every file that contains the target identifier; "Grep listing" = the match listing only (a lower bound: a listing alone usually does not answer the question).
 
-| Question type | Repos | Graph tokens (median of repo medians) | Read whole files (median) | Grep listing (median) | Reduction vs reading files | Reduction vs grep (mean of repos) | Importer precision / recall (mean) |
+| Question type | Repos | Squeze graph (median of repo medians) | Read whole files (median) | Grep listing (median) | Reduction vs reading files | Reduction vs grep (mean of repos) | Importer precision / recall (mean of repos) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| impact | 6 | 264 | 28,330 | 630 | 98.4% | 4% | 59% / 86% |
-| neighbors | 6 | 111 | 26,943 | 1156 | 94.8% | 79% | n/a |
+| impact | 6 | 264 | 28,330 | 630 | 98.4% | 4% | 75% / 79% |
+| neighbors | 6 | 111 | 26,943 | 1164 | 94.8% | 79% | n/a |
 | path | 6 | 60 | 11,070 | 11070 | 99.3% | 99% | n/a |
 | overview | 6 | 860 | 36,305 | 790 | 96.4% | -12% | n/a |
 
 * Versus **reading whole files** the graph answer is 94.8–99.3% smaller.
-* Versus a **grep listing** the saving is small or negative: `impact` 4%, `overview` −12% (the overview costs more than a match listing, but it contains information a listing does not). The honest comparison for `impact` is precision: importer precision averages 59% (low in gin, ripgrep and thor, where name-based references over-report) with recall 86%.
+* Versus a **grep listing** the saving is small or negative: `impact` 4%, `overview` −12%.
+* **Importer accuracy (impact, 8 files per repository, grep ground truth):** precision 75%, recall 79% on average. Per repository: flask 100%/87%, gson 100%/100%, thor 100%/100%, express 88%/60%, ripgrep 39%/71%, gin 25%/58%.
+* **Correction:** an earlier version reported 59% precision and 0% for gin. The grep ground truth missed Go `import ( ... )` blocks; the eval now recognises them (`scripts/graph-eval.ts`). The read-whole-files and graph token numbers are unchanged by that fix; only the grep listing and accuracy columns changed.
 * Treat these as a proxy for agent behaviour, not a billing measurement.
 
 ## Build cost

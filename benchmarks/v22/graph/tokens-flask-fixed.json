@@ -1,0 +1,203 @@
+{
+  "repo": "pallets__flask",
+  "files": 84,
+  "questions": 20,
+  "byType": {
+    "impact": {
+      "n": 8,
+      "graphMedian": 557,
+      "graphMean": 440,
+      "readMedian": 31424,
+      "readMean": 39117,
+      "grepMedian": 690,
+      "grepMean": 768,
+      "reductionVsRead": 0.9822746945010183,
+      "reductionVsGrep": 0.19275362318840583,
+      "importerPrecision": 1,
+      "importerRecall": 0.8730158730158731
+    },
+    "neighbors": {
+      "n": 5,
+      "graphMedian": 121,
+      "graphMean": 127,
+      "readMedian": 34671,
+      "readMean": 36377,
+      "grepMedian": 1462,
+      "grepMean": 1156,
+      "reductionVsRead": 0.9965100516281619,
+      "reductionVsGrep": 0.9172366621067032
+    },
+    "path": {
+      "n": 6,
+      "graphMedian": 64,
+      "graphMean": 69,
+      "readMedian": 16188,
+      "readMean": 15176,
+      "grepMedian": 16188,
+      "grepMean": 15176,
+      "reductionVsRead": 0.996046454163578,
+      "reductionVsGrep": 0.996046454163578
+    },
+    "overview": {
+      "n": 1,
+      "graphMedian": 840,
+      "graphMean": 840,
+      "readMedian": 47470,
+      "readMean": 47470,
+      "grepMedian": 678,
+      "grepMean": 678,
+      "reductionVsRead": 0.9823046134400674,
+      "reductionVsGrep": -0.23893805309734506
+    }
+  },
+  "overall": {
+    "graphMedian": 99,
+    "readMedian": 30866,
+    "grepMedian": 1239,
+    "graphMean": 271,
+    "readMean": 31667,
+    "grepMean": 5183
+  },
+  "detail": [
+    {
+      "type": "impact",
+      "question": "what depends on src/flask/cli.py",
+      "graphTokens": 564,
+      "readTokens": 37854,
+      "grepTokens": 1268
+    },
+    {
+      "type": "impact",
+      "question": "what depends on src/flask/globals.py",
+      "graphTokens": 588,
+      "readTokens": 81020,
+      "grepTokens": 1239
+    },
+    {
+      "type": "impact",
+      "question": "what depends on src/flask/debughelpers.py",
+      "graphTokens": 557,
+      "readTokens": 31424,
+      "grepTokens": 79
+    },
+    {
+      "type": "impact",
+      "question": "what depends on examples/tutorial/flaskr/auth.py",
+      "graphTokens": 57,
+      "readTokens": 2495,
+      "grepTokens": 558
+    },
+    {
+      "type": "impact",
+      "question": "what depends on examples/tutorial/flaskr/db.py",
+      "graphTokens": 65,
+      "readTokens": 9991,
+      "grepTokens": 690
+    },
+    {
+      "type": "impact",
+      "question": "what depends on src/flask/sessions.py",
+      "graphTokens": 591,
+      "readTokens": 30866,
+      "grepTokens": 199
+    },
+    {
+      "type": "impact",
+      "question": "what depends on src/flask/testing.py",
+      "graphTokens": 564,
+      "readTokens": 74926,
+      "grepTokens": 1181
+    },
+    {
+      "type": "impact",
+      "question": "what depends on src/flask/blueprints.py",
+      "graphTokens": 537,
+      "readTokens": 44359,
+      "grepTokens": 926
+    },
+    {
+      "type": "neighbors",
+      "question": "what does tests/test_apps/blueprintapp/apps/frontend/__init__.py import and who imports it",
+      "graphTokens": 99,
+      "readTokens": 34671,
+      "grepTokens": 88
+    },
+    {
+      "type": "neighbors",
+      "question": "what does src/flask/debughelpers.py import and who imports it",
+      "graphTokens": 200,
+      "readTokens": 32807,
+      "grepTokens": 1462
+    },
+    {
+      "type": "neighbors",
+      "question": "what does src/flask/json/__init__.py import and who imports it",
+      "graphTokens": 140,
+      "readTokens": 64903,
+      "grepTokens": 1671
+    },
+    {
+      "type": "neighbors",
+      "question": "what does src/flask/views.py import and who imports it",
+      "graphTokens": 121,
+      "readTokens": 48645,
+      "grepTokens": 1701
+    },
+    {
+      "type": "neighbors",
+      "question": "what does docs/conf.py import and who imports it",
+      "graphTokens": 77,
+      "readTokens": 859,
+      "grepTokens": 859
+    },
+    {
+      "type": "path",
+      "question": "how does tests/test_config.py reach src/flask/typing.py",
+      "graphTokens": 60,
+      "readTokens": 17599,
+      "grepTokens": 17599
+    },
+    {
+      "type": "path",
+      "question": "how does tests/test_apps/subdomaintestmodule/__init__.py reach src/flask/typing.py",
+      "graphTokens": 76,
+      "readTokens": 15604,
+      "grepTokens": 15604
+    },
+    {
+      "type": "path",
+      "question": "how does tests/test_request.py reach src/flask/debughelpers.py",
+      "graphTokens": 60,
+      "readTokens": 16677,
+      "grepTokens": 16677
+    },
+    {
+      "type": "path",
+      "question": "how does examples/tutorial/flaskr/blog.py reach src/flask/json/provider.py",
+      "graphTokens": 69,
+      "readTokens": 4421,
+      "grepTokens": 4421
+    },
+    {
+      "type": "path",
+      "question": "how does examples/celery/src/task_app/views.py reach src/flask/json/tag.py",
+      "graphTokens": 82,
+      "readTokens": 20566,
+      "grepTokens": 20566
+    },
+    {
+      "type": "path",
+      "question": "how does src/flask/sansio/blueprints.py reach src/flask/templating.py",
+      "graphTokens": 64,
+      "readTokens": 16188,
+      "grepTokens": 16188
+    },
+    {
+      "type": "overview",
+      "question": "list subsystems",
+      "graphTokens": 840,
+      "readTokens": 47470,
+      "grepTokens": 678
+    }
+  ]
+}

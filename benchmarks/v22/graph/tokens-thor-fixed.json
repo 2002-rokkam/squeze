@@ -1,0 +1,203 @@
+{
+  "repo": "thor",
+  "files": 81,
+  "questions": 20,
+  "byType": {
+    "impact": {
+      "n": 8,
+      "graphMedian": 257,
+      "graphMean": 249,
+      "readMedian": 15810,
+      "readMean": 17081,
+      "grepMedian": 117,
+      "grepMean": 672,
+      "reductionVsRead": 0.9837444655281468,
+      "reductionVsGrep": -1.1965811965811968,
+      "importerPrecision": 1,
+      "importerRecall": 1
+    },
+    "neighbors": {
+      "n": 5,
+      "graphMedian": 94,
+      "graphMean": 97,
+      "readMedian": 19215,
+      "readMean": 22152,
+      "grepMedian": 973,
+      "grepMean": 1115,
+      "reductionVsRead": 0.9951079885506116,
+      "reductionVsGrep": 0.9033915724563206
+    },
+    "path": {
+      "n": 6,
+      "graphMedian": 57,
+      "graphMean": 60,
+      "readMedian": 9152,
+      "readMean": 12791,
+      "grepMedian": 9152,
+      "grepMean": 12791,
+      "reductionVsRead": 0.9937718531468531,
+      "reductionVsGrep": 0.9937718531468531
+    },
+    "overview": {
+      "n": 1,
+      "graphMedian": 752,
+      "graphMean": 752,
+      "readMedian": 25140,
+      "readMean": 25140,
+      "grepMedian": 596,
+      "grepMean": 596,
+      "reductionVsRead": 0.9700875099443118,
+      "reductionVsGrep": -0.261744966442953
+    }
+  },
+  "overall": {
+    "graphMedian": 94,
+    "readMedian": 15810,
+    "grepMedian": 946,
+    "graphMean": 179,
+    "readMean": 17465,
+    "grepMean": 4415
+  },
+  "detail": [
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/core_ext/hash_with_indifferent_access.rb",
+      "graphTokens": 303,
+      "readTokens": 9818,
+      "grepTokens": 117
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/base.rb",
+      "graphTokens": 481,
+      "readTokens": 39962,
+      "grepTokens": 2711
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/shell/terminal.rb",
+      "graphTokens": 145,
+      "readTokens": 19636,
+      "grepTokens": 754
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/shell/lcs_diff.rb",
+      "graphTokens": 57,
+      "readTokens": 1726,
+      "grepTokens": 34
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/actions/create_file.rb",
+      "graphTokens": 146,
+      "readTokens": 15810,
+      "grepTokens": 658
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/group.rb",
+      "graphTokens": 284,
+      "readTokens": 29808,
+      "grepTokens": 946
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/parser.rb",
+      "graphTokens": 317,
+      "readTokens": 16170,
+      "grepTokens": 103
+    },
+    {
+      "type": "impact",
+      "question": "what depends on lib/thor/shell/column_printer.rb",
+      "graphTokens": 257,
+      "readTokens": 3716,
+      "grepTokens": 56
+    },
+    {
+      "type": "neighbors",
+      "question": "what does lib/thor/runner.rb import and who imports it",
+      "graphTokens": 123,
+      "readTokens": 19215,
+      "grepTokens": 2695
+    },
+    {
+      "type": "neighbors",
+      "question": "what does lib/thor/shell.rb import and who imports it",
+      "graphTokens": 94,
+      "readTokens": 60196,
+      "grepTokens": 622
+    },
+    {
+      "type": "neighbors",
+      "question": "what does lib/thor/actions/empty_directory.rb import and who imports it",
+      "graphTokens": 123,
+      "readTokens": 8882,
+      "grepTokens": 1024
+    },
+    {
+      "type": "neighbors",
+      "question": "what does lib/thor/shell/wrapped_printer.rb import and who imports it",
+      "graphTokens": 82,
+      "readTokens": 2997,
+      "grepTokens": 261
+    },
+    {
+      "type": "neighbors",
+      "question": "what does lib/thor/shell/color.rb import and who imports it",
+      "graphTokens": 63,
+      "readTokens": 19468,
+      "grepTokens": 973
+    },
+    {
+      "type": "path",
+      "question": "how does spec/actions/create_file_spec.rb reach lib/thor/actions/file_manipulation.rb",
+      "graphTokens": 57,
+      "readTokens": 7857,
+      "grepTokens": 7857
+    },
+    {
+      "type": "path",
+      "question": "how does spec/actions/empty_directory_spec.rb reach lib/thor/invocation.rb",
+      "graphTokens": 74,
+      "readTokens": 14990,
+      "grepTokens": 14990
+    },
+    {
+      "type": "path",
+      "question": "how does spec/base_spec.rb reach lib/thor.rb",
+      "graphTokens": 41,
+      "readTokens": 9152,
+      "grepTokens": 9152
+    },
+    {
+      "type": "path",
+      "question": "how does spec/shell/basic_spec.rb reach lib/thor/shell.rb",
+      "graphTokens": 70,
+      "readTokens": 19186,
+      "grepTokens": 19186
+    },
+    {
+      "type": "path",
+      "question": "how does spec/line_editor/readline_spec.rb reach lib/thor.rb",
+      "graphTokens": 49,
+      "readTokens": 6718,
+      "grepTokens": 6718
+    },
+    {
+      "type": "path",
+      "question": "how does spec/parser/options_spec.rb reach lib/thor/shell.rb",
+      "graphTokens": 68,
+      "readTokens": 18843,
+      "grepTokens": 18843
+    },
+    {
+      "type": "overview",
+      "question": "list subsystems",
+      "graphTokens": 752,
+      "readTokens": 25140,
+      "grepTokens": 596
+    }
+  ]
+}

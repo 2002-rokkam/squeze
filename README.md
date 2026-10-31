@@ -236,7 +236,11 @@ Structural chunkers on real repositories: Markdown 807 files / 98.6% of non-blan
 
 ### 9. Code graph (structural questions)
 
-`squeze graph` answers "what depends on X?", "how does A reach B?" and "what are the subsystems?" from a dependency graph. On 6 repositories (express, flask, gin, gson, ripgrep, thor; about 20 questions each) the graph answer is **94.8–99.3% smaller than reading the files that contain the identifier**, with medians of 60 tokens (path), 111 (neighbours), 264 (impact) and 860 (overview). Against a bare `grep` match listing the saving is small or negative (impact 4%, overview −12%), and importer precision of impact queries averages 59% (recall 86%) because name-based references over-report. All 300 sampled import edges (50 per repository) were verified to exist. Details, limits and real output: [benchmarks/v22/graph.md](benchmarks/v22/graph.md), [docs/GRAPH.md](docs/GRAPH.md).
+`squeze graph` answers "what depends on X?", "how does A reach B?" and "what are the subsystems?" from a dependency graph. On 6 repositories (express, flask, gin, gson, ripgrep, thor; about 20 questions each) the graph answer is **94.8–99.3% smaller than reading the files that contain the identifier**, with medians of 60 tokens (path), 111 (neighbours), 264 (impact) and 860 (overview).
+
+Importer accuracy of `--impact` (8 files per repository, checked against a grep ground truth): **precision 75%, recall 79%** on average. Per repository: flask 100% / 87%, gson 100% / 100%, thor 100% / 100%, express 88% / 60%, ripgrep 39% / 71%, gin 25% / 58%. The low values are real: Go imports are resolved to one file rather than to the whole package, so gin and ripgrep over-report importers. An earlier version of this section said 59%; that came from a broken Go ground truth in the eval, now fixed.
+
+Against a plain grep listing the saving is small (impact 4%) and negative for overview (−12%). All 300 sampled import edges (50 per repository) exist and are spelled as the source says. The graph has no call edges and no Go package-level edges yet; see "What is not proven". Details and real output: [benchmarks/v22/graph.md](benchmarks/v22/graph.md), [docs/GRAPH.md](docs/GRAPH.md).
 
 ### 10. Speed and memory
 
@@ -264,6 +268,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 - Each new ranking feature (feedback terms, phrase matching, priors, windows, pointers, tokenizer v2) is **on by default** on the strength of the aggregate results above; a one-feature-at-a-time ablation has not been published. Switch any of them off with `RSQ_FEATURES` and report regressions.
 - Stack-frame localisation (`+frames`) and Git-history signals (`+git`) are implemented and unit-tested, use proposed boost constants, and are **off by default** until validated.
 - Timings were taken on a loaded machine.
+- The code graph has no call edges and resolves Go imports to a single file, so its impact answers are weak for gin and ripgrep (precision 25% and 39%).
 - The multi-repository robustness run is partial (2 repositories) and the byte-for-byte determinism flag raised during it is unexplained (see section 11).
 
 ## Configuration

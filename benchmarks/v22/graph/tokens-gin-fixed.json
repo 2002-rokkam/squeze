@@ -1,0 +1,182 @@
+{
+  "repo": "gin-gonic__gin",
+  "files": 99,
+  "questions": 17,
+  "byType": {
+    "impact": {
+      "n": 8,
+      "graphMedian": 168,
+      "graphMean": 159,
+      "readMedian": 12396,
+      "readMean": 45248,
+      "grepMedian": 283,
+      "grepMean": 1803,
+      "reductionVsRead": 0.9864472410454985,
+      "reductionVsGrep": 0.40636042402826855,
+      "importerPrecision": 0.25,
+      "importerRecall": 0.5839285714285715
+    },
+    "neighbors": {
+      "n": 5,
+      "graphMedian": 101,
+      "graphMean": 151,
+      "readMedian": 52612,
+      "readMean": 53755,
+      "grepMedian": 471,
+      "grepMean": 2991,
+      "reductionVsRead": 0.9980802858663422,
+      "reductionVsGrep": 0.7855626326963907
+    },
+    "path": {
+      "n": 3,
+      "graphMedian": 42,
+      "graphMean": 41,
+      "readMedian": 12988,
+      "readMean": 10359,
+      "grepMedian": 12988,
+      "grepMean": 10359,
+      "reductionVsRead": 0.9967662457653218,
+      "reductionVsGrep": 0.9967662457653218
+    },
+    "overview": {
+      "n": 1,
+      "graphMedian": 879,
+      "graphMean": 879,
+      "readMedian": 10067,
+      "readMean": 10067,
+      "grepMedian": 487,
+      "grepMean": 487,
+      "reductionVsRead": 0.9126850104301182,
+      "reductionVsGrep": -0.8049281314168377
+    }
+  },
+  "overall": {
+    "graphMedian": 104,
+    "readMedian": 13576,
+    "grepMedian": 487,
+    "graphMean": 178,
+    "readMean": 39524,
+    "grepMean": 3585
+  },
+  "detail": [
+    {
+      "type": "impact",
+      "question": "what depends on codec/json/jsoniter.go",
+      "graphTokens": 202,
+      "readTokens": 1804,
+      "grepTokens": 304
+    },
+    {
+      "type": "impact",
+      "question": "what depends on binding/binding.go",
+      "graphTokens": 168,
+      "readTokens": 91711,
+      "grepTokens": 3629
+    },
+    {
+      "type": "impact",
+      "question": "what depends on codec/json/go_json.go",
+      "graphTokens": 202,
+      "readTokens": 228,
+      "grepTokens": 30
+    },
+    {
+      "type": "impact",
+      "question": "what depends on binding/form.go",
+      "graphTokens": 85,
+      "readTokens": 86627,
+      "grepTokens": 6668
+    },
+    {
+      "type": "impact",
+      "question": "what depends on binding/bson.go",
+      "graphTokens": 86,
+      "readTokens": 53813,
+      "grepTokens": 283
+    },
+    {
+      "type": "impact",
+      "question": "what depends on binding/form_mapping.go",
+      "graphTokens": 124,
+      "readTokens": 0,
+      "grepTokens": 0
+    },
+    {
+      "type": "impact",
+      "question": "what depends on codec/json/json.go",
+      "graphTokens": 201,
+      "readTokens": 115404,
+      "grepTokens": 3436
+    },
+    {
+      "type": "impact",
+      "question": "what depends on codec/json/sonic.go",
+      "graphTokens": 203,
+      "readTokens": 12396,
+      "grepTokens": 76
+    },
+    {
+      "type": "neighbors",
+      "question": "what does binding/bson.go import and who imports it",
+      "graphTokens": 96,
+      "readTokens": 53968,
+      "grepTokens": 227
+    },
+    {
+      "type": "neighbors",
+      "question": "what does test_helpers.go import and who imports it",
+      "graphTokens": 104,
+      "readTokens": 471,
+      "grepTokens": 471
+    },
+    {
+      "type": "neighbors",
+      "question": "what does tree_test.go import and who imports it",
+      "graphTokens": 388,
+      "readTokens": 19651,
+      "grepTokens": 12586
+    },
+    {
+      "type": "neighbors",
+      "question": "what does path.go import and who imports it",
+      "graphTokens": 65,
+      "readTokens": 142075,
+      "grepTokens": 1515
+    },
+    {
+      "type": "neighbors",
+      "question": "what does render/pdf.go import and who imports it",
+      "graphTokens": 101,
+      "readTokens": 52612,
+      "grepTokens": 154
+    },
+    {
+      "type": "path",
+      "question": "how does mode_test.go reach codec/json/jsoniter.go",
+      "graphTokens": 42,
+      "readTokens": 4512,
+      "grepTokens": 4512
+    },
+    {
+      "type": "path",
+      "question": "how does context.go reach internal/fs/fs.go",
+      "graphTokens": 37,
+      "readTokens": 12988,
+      "grepTokens": 12988
+    },
+    {
+      "type": "path",
+      "question": "how does context.go reach internal/bytesconv/bytesconv.go",
+      "graphTokens": 45,
+      "readTokens": 13576,
+      "grepTokens": 13576
+    },
+    {
+      "type": "overview",
+      "question": "list subsystems",
+      "graphTokens": 879,
+      "readTokens": 10067,
+      "grepTokens": 487
+    }
+  ]
+}
