@@ -264,16 +264,20 @@ export type PathKind = 'imports' | 'file' | 'full';
 
 /** Shortest dependency chain between two nodes: imports only, then imports + references, then ignoring direction. */
 export function findPath(graph: CodeGraph, from: number, to: number): { hops: Hop[]; directed: boolean; kind: PathKind } | undefined {
+  const isExternal = (node: number) => graph.kind[node] === 2;
   if (graph.nodeKind(from) === 'file' && graph.nodeKind(to) === 'file') {
     const viaImports = shortestPath(graph.importOut, graph.importIn, from, to, false);
     if (viaImports) return { hops: viaImports, directed: true, kind: 'imports' };
     const viaFiles = shortestPath(graph.fileOut, graph.fileIn, from, to, false);
     if (viaFiles) return { hops: viaFiles, directed: true, kind: 'file' };
+    const undirected = shortestPath(graph.fileOut, graph.fileIn, from, to, true);
+    if (undirected) return { hops: undirected, directed: false, kind: 'file' };
   } else {
-    const hops = shortestPath(graph.out, graph.into, from, to, false);
+    const hops = shortestPath(graph.out, graph.into, from, to, false, isExternal);
     if (hops) return { hops, directed: true, kind: 'full' };
   }
-  const hops = shortestPath(graph.out, graph.into, from, to, true);
+  // External packages are shared by unrelated files, so they never connect two nodes.
+  const hops = shortestPath(graph.out, graph.into, from, to, true, isExternal);
   return hops ? { hops, directed: false, kind: 'full' } : undefined;
 }
 
@@ -287,7 +291,7 @@ export function renderPath(graph: CodeGraph, a: string, b: string, budget: numbe
     return clamp(`no path between ${graph.describe(first.node)} and ${graph.describe(second.node)} in the graph (not even ignoring direction): they are in different components.`, budget);
   }
   const kindOf = (edge: number) => (found.kind === 'imports' ? 'imports' : found.kind === 'file' ? (graph.fileMask[edge] & 1 ? 'imports' : 'references~') : mark(graph, edge));
-  const quality = found.kind === 'imports' ? 'imports only' : 'uses name-based references (~)';
+  const quality = found.hops.every(hop => kindOf(hop.edge) === 'imports') ? 'imports only' : 'uses name-based references (~)';
   const lines = [`path ${graph.describe(first.node)} → ${graph.describe(second.node)}: ${found.hops.length} hops${found.directed ? '' : ', edge direction ignored'} · ${quality}`, graph.describe(first.node)];
   found.hops.forEach(hop => lines.push(`  ${hopText(graph, hop, kindOf)}`));
   if (!found.hops.length) lines.push('  (same node)');

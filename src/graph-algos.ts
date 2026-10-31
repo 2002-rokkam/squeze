@@ -205,7 +205,7 @@ export interface Hop { node: number; edge: number; reversed: boolean }
  * Shortest chain (fewest hops) from `source` to `target`. With `reverse` the search may also walk edges backwards
  * (`reversed` hops). `edge` indexes the original edge list of both CSRs. Ties go to the lowest edge index.
  */
-export function shortestPath(out: Csr, into: Csr, source: number, target: number, reverse: boolean, maxVisited = 5_000_000): Hop[] | undefined {
+export function shortestPath(out: Csr, into: Csr, source: number, target: number, reverse: boolean, skip?: (node: number) => boolean, maxVisited = 5_000_000): Hop[] | undefined {
   if (source === target) return [];
   const previous = new Int32Array(out.size).fill(-1);
   const via = new Int32Array(out.size).fill(-1);
@@ -219,7 +219,7 @@ export function shortestPath(out: Csr, into: Csr, source: number, target: number
       const relax = (csr: Csr, flipped: boolean) => {
         for (let e = csr.start[v]; e < csr.start[v + 1]; e++) {
           const w = csr.to[e];
-          if (previous[w] >= 0) continue;
+          if (previous[w] >= 0 || (skip && w !== target && skip(w))) continue;
           previous[w] = v;
           via[w] = csr.edge[e];
           backwards[w] = flipped ? 1 : 0;
