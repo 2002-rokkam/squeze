@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { CodeGraph } from './graph.js';
+import { communityColor as color, layout, ringSeeds } from './graph-layout.js';
 
 /**
  * Self-contained HTML view of the code graph: an inline SVG whose layout is computed here (deterministic force
@@ -18,64 +19,6 @@ const HEIGHT = 800;
 const MAX_EDGES = 4000;
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]!);
-const color = (id: number) => `hsl(${Math.round((id * 137.508) % 360)},62%,52%)`;
-
-interface Point { x: number; y: number }
-
-/** Fruchterman-Reingold style layout started from a fixed arrangement, so equal input gives equal output. */
-function layout(count: number, community: number[], links: [number, number, number][], seeds: Map<number, Point>): Point[] {
-  const members = new Map<number, number[]>();
-  community.forEach((c, i) => { const list = members.get(c); if (list) list.push(i); else members.set(c, [i]); });
-  const points: Point[] = new Array(count);
-  for (const [c, list] of members) {
-    const center = seeds.get(c)!;
-    list.forEach((node, k) => {
-      const angle = k * 2.399963;
-      const radius = 14 * Math.sqrt(k + 1);
-      points[node] = { x: center.x + radius * Math.cos(angle), y: center.y + radius * Math.sin(angle) };
-    });
-  }
-  const area = WIDTH * HEIGHT;
-  const spring = Math.sqrt(area / Math.max(1, count)) * 0.9;
-  const iterations = count > 800 ? 40 : count > 300 ? 80 : 150;
-  let temperature = WIDTH / 10;
-  const dx = new Float64Array(count);
-  const dy = new Float64Array(count);
-  for (let step = 0; step < iterations; step++) {
-    dx.fill(0);
-    dy.fill(0);
-    for (let i = 0; i < count; i++) {
-      for (let j = i + 1; j < count; j++) {
-        let rx = points[i].x - points[j].x;
-        let ry = points[i].y - points[j].y;
-        let d2 = rx * rx + ry * ry;
-        if (d2 < 0.01) { rx = (i - j) * 0.1; ry = 0.1; d2 = rx * rx + ry * ry; }
-        const force = (spring * spring) / d2;
-        dx[i] += rx * force; dy[i] += ry * force;
-        dx[j] -= rx * force; dy[j] -= ry * force;
-      }
-    }
-    for (const [a, b, weight] of links) {
-      const rx = points[a].x - points[b].x;
-      const ry = points[a].y - points[b].y;
-      const d = Math.sqrt(rx * rx + ry * ry) || 0.01;
-      const force = (d * Math.min(3, 0.5 + weight)) / spring / 4;
-      dx[a] -= rx * force; dy[a] -= ry * force;
-      dx[b] += rx * force; dy[b] += ry * force;
-    }
-    for (let i = 0; i < count; i++) {
-      const center = seeds.get(community[i])!;
-      dx[i] += (center.x - points[i].x) * 0.02;
-      dy[i] += (center.y - points[i].y) * 0.02;
-      const length = Math.sqrt(dx[i] * dx[i] + dy[i] * dy[i]) || 1;
-      const move = Math.min(length, temperature);
-      points[i].x += (dx[i] / length) * move;
-      points[i].y += (dy[i] / length) * move;
-    }
-    temperature *= 0.96;
-  }
-  return points;
-}
 
 const SCRIPT = `(function(){var svg=document.getElementById('g');var nodes=svg.querySelectorAll('circle');var lines=svg.querySelectorAll('line');
 function clear(){svg.classList.remove('focus');nodes.forEach(function(n){n.classList.remove('hot')});lines.forEach(function(l){l.classList.remove('hot')});}
@@ -96,11 +39,7 @@ export function renderHtml(graph: CodeGraph, options: HtmlOptions = {}): string 
   const community = shown.map(f => graph.community[f]);
   const usedCommunities = [...new Set(community)].sort((a, b) => a - b);
 
-  const seeds = new Map<number, Point>();
-  usedCommunities.forEach((c, i) => {
-    const angle = (i / usedCommunities.length) * Math.PI * 2;
-    seeds.set(c, { x: WIDTH / 2 + 0.33 * WIDTH * Math.cos(angle), y: HEIGHT / 2 + 0.33 * HEIGHT * Math.sin(angle) });
-  });
+  const seeds = ringSeeds(usedCommunities, WIDTH, HEIGHT);
   const edges: { a: number; b: number; imports: boolean; weight: number }[] = [];
   for (const f of shown) {
     for (let e = graph.fileOut.start[f]; e < graph.fileOut.start[f + 1]; e++) {
@@ -110,7 +49,7 @@ export function renderHtml(graph: CodeGraph, options: HtmlOptions = {}): string 
   }
   edges.sort((x, y) => y.weight - x.weight || x.a - y.a || x.b - y.b);
   const kept = edges.slice(0, MAX_EDGES).sort((x, y) => x.a - y.a || x.b - y.b);
-  const points = layout(shown.length, community, kept.map(edge => [edge.a, edge.b, Math.log2(1 + edge.weight)]), seeds);
+  const points = layout(shown.length, community, kept.map(edge => [edge.a, edge.b, Math.log2(1 + edge.weight)]), seeds, WIDTH, HEIGHT);
 
   const xs = points.map(p => p.x);
   const ys = points.map(p => p.y);
