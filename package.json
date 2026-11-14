@@ -252,6 +252,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.25.0",
+    "playwright": "^1.65.1",
     "tree-sitter-wasms": "0.1.13",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
