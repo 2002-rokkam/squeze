@@ -1,0 +1,144 @@
+{
+  "label": "private-A",
+  "aggregateOnly": true,
+  "sample": 40,
+  "seed": 1729,
+  "margin": 0.02,
+  "pooled": {
+    "cases": 40,
+    "recall": {
+      "squeeze": {
+        "mean": 1,
+        "lo": 1,
+        "hi": 1
+      },
+      "grep": {
+        "mean": 0.95,
+        "lo": 0.875,
+        "hi": 1
+      },
+      "whole": {
+        "mean": 1,
+        "lo": 1,
+        "hi": 1
+      }
+    },
+    "nonInferiority": {
+      "meanA": 1,
+      "meanB": 1,
+      "diff": 0,
+      "lo": 0,
+      "hi": 0,
+      "margin": 0.02,
+      "pass": true
+    },
+    "versusGrep": {
+      "squeezeOnly": 2,
+      "grepOnly": 0,
+      "bothHit": 38,
+      "bothMiss": 0,
+      "p": 0.5
+    },
+    "tokens": {
+      "squeeze": 119417,
+      "grep": 868234,
+      "whole": 291527240
+    },
+    "reductionVersusGrep": {
+      "point": 0.8624598898453643,
+      "lo": 0.7978774162646431,
+      "hi": 0.9039433948764617
+    },
+    "reductionVersusWhole": {
+      "point": 0.999590374470667,
+      "lo": 0.9995901480767286,
+      "hi": 0.9995906214458724
+    },
+    "medianCaseReductionVersusGrep": 0.8063755741258738,
+    "squeezeCheaperThanGrep": 37,
+    "latency": {
+      "p50Ms": 922.6092704999974,
+      "p90Ms": 1973.2168042000003
+    },
+    "misses": 0
+  },
+  "repositories": [
+    {
+      "repo": "private-A",
+      "universe": {
+        "listed": 1125,
+        "files": 1100,
+        "excluded": {
+          "too-large": 5,
+          "path-policy": 12,
+          "tracked-but-ignored": 8
+        },
+        "tokens": 7288181
+      },
+      "squeeze": {
+        "totalFiles": 1100,
+        "indexMode": "full",
+        "coldIndexMs": 9102.888166999997
+      },
+      "availableCases": 4655,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.95,
+            "lo": 0.875,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 1,
+          "meanB": 1,
+          "diff": 0,
+          "lo": 0,
+          "hi": 0,
+          "margin": 0.02,
+          "pass": true
+        },
+        "versusGrep": {
+          "squeezeOnly": 2,
+          "grepOnly": 0,
+          "bothHit": 38,
+          "bothMiss": 0,
+          "p": 0.5
+        },
+        "tokens": {
+          "squeeze": 119417,
+          "grep": 868234,
+          "whole": 291527240
+        },
+        "reductionVersusGrep": {
+          "point": 0.8624598898453643,
+          "lo": 0.7978774162646431,
+          "hi": 0.9039433948764617
+        },
+        "reductionVersusWhole": {
+          "point": 0.999590374470667,
+          "lo": 0.9995901480767286,
+          "hi": 0.9995906214458724
+        },
+        "medianCaseReductionVersusGrep": 0.8063755741258738,
+        "squeezeCheaperThanGrep": 37,
+        "latency": {
+          "p50Ms": 922.6092704999974,
+          "p90Ms": 1973.2168042000003
+        },
+        "misses": 0
+      }
+    }
+  ]
+}
