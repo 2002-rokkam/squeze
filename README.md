@@ -51,6 +51,8 @@ code --install-extension releases/squeze-cli-2.2.1.vsix
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
 
+The extension also provides **Squeze: Open Code Explorer** (an interactive map of the code graph), **Squeze: Refresh Index** and **Squeze: Show Token Savings**. The index refreshes after file changes when `squeze.autoRefresh` is on (the default). Above 5,000 files the default index parses a candidate subset, so the graph is marked partial; timings are in [docs/SCALE_EVALUATION.md](docs/SCALE_EVALUATION.md#incremental-refresh-on-a-real-repository).
+
 ### MCP
 
 ```json
@@ -300,7 +302,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 ## Limitations
 
 - Retrieval is lexical and structural; a task whose words never appear near the relevant code can be missed. Read the "Also relevant" pointers, `expand`, and fall back to normal search when the pack says evidence is weak.
-- Above 5,000 files a file-level sketch chooses the candidates that get parsed. Index reuse trusts size, modification time, change time and inode. Change time cannot be set from user space, so a same-size edit is still caught when its modification time was restored. Set `REPOSQUEEZE_REFRESH_INDEX=1` to force a full re-read.
+- Above 5,000 files a file-level sketch chooses the candidates that get parsed. Index reuse trusts size, modification time, change time and inode. Change time cannot be set from user space, so a same-size edit is still caught when its modification time was restored. Files whose newest timestamp is within two seconds of the scan are always re-read, because a rewrite in the same timestamp tick can leave the stamps unchanged. Set `REPOSQUEEZE_REFRESH_INDEX=1` to force a full re-read.
 - Safety limits: 100,000 files, 2 GiB indexed text, 2 MiB per file, depth 60. Exceeding one is reported in the output.
 - Token counts use `o200k_base`; provider counts differ.
 - Windows: the CLI and extension are built for it, but some benchmark and chunker tests still assume `/` path separators, so the Windows CI job is informational.
