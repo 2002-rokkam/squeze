@@ -79,6 +79,7 @@ class IgnoreRules {
   private readonly custom = ignore();
   private hasCustom = false;
   private readonly cache = new Map<string, Promise<Ignore | undefined>>();
+  private readonly dirVerdicts = new Map<string, Promise<boolean>>();
   /** `gitDirs`: directories known to contain a .gitignore (git enumeration); undefined means probe every directory. */
   constructor(private readonly root: string, private readonly gitDirs?: ReadonlySet<string>) {}
 
@@ -102,15 +103,38 @@ class IgnoreRules {
     return rules;
   }
 
-  async ignores(path: string): Promise<boolean> {
-    if (this.hasCustom && this.custom.ignores(path)) return true;
-    const parts = path.replace(/\/$/, '').split('/');
-    for (let depth = 0; depth < parts.length; depth++) {
+  /** Git's precedence: the deepest .gitignore with a matching pattern decides, and a negation there can re-include. */
+  private async verdict(path: string, directory: boolean): Promise<boolean> {
+    const parts = path.split('/');
+    for (let depth = parts.length - 1; depth >= 0; depth--) {
       const dir = parts.slice(0, depth).join('/');
       const rules = await this.rulesIn(dir);
-      if (rules?.ignores(dir ? path.slice(dir.length + 1) : path)) return true;
+      if (!rules) continue;
+      const result = rules.test((dir ? path.slice(dir.length + 1) : path) + (directory ? '/' : ''));
+      if (result.ignored || result.unignored) return result.ignored;
     }
     return false;
+  }
+
+  private excludedDirectory(dir: string): Promise<boolean> {
+    let verdict = this.dirVerdicts.get(dir);
+    if (!verdict) {
+      verdict = this.verdict(dir, true);
+      this.dirVerdicts.set(dir, verdict);
+    }
+    return verdict;
+  }
+
+  /** Git never re-includes a file beneath an excluded directory, so ancestors are decided before the path itself. */
+  async ignores(path: string): Promise<boolean> {
+    if (this.hasCustom && this.custom.ignores(path)) return true;
+    const directory = path.endsWith('/');
+    const trimmed = directory ? path.slice(0, -1) : path;
+    const parts = trimmed.split('/');
+    for (let depth = 1; depth < parts.length; depth++) {
+      if (await this.excludedDirectory(parts.slice(0, depth).join('/'))) return true;
+    }
+    return this.verdict(trimmed, directory);
   }
 }
 

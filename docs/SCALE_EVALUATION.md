@@ -41,6 +41,6 @@ Raw evidence:
 
 This benchmark proves operation on its generated distribution, not perfect retrieval for every 50,000-file repository. Its identifiers are deterministic and the gold files contain exact term evidence. Real monorepos have generated code, duplicated APIs, cross-language names, build indirection and tasks that do not name their relevant concepts.
 
-The candidate stage can miss a file with no shared path or indexed term. Files with more than 8,192 unique normalized terms use deterministic term sampling. Increase `REPOSQUEEZE_MAX_CANDIDATES`, provide paths or identifiers, or use ordinary search when obligations are missing. Set `REPOSQUEEZE_REFRESH_INDEX=1` after timestamp-preserving edits.
+The candidate stage can miss a file with no shared path or indexed term. Files with more than 8,192 unique normalized terms use deterministic term sampling. Increase `REPOSQUEEZE_MAX_CANDIDATES`, provide paths or identifiers, or use ordinary search when obligations are missing. Edits are detected by size, modification time, change time and inode, so a timestamp-preserving edit is re-read. `REPOSQUEEZE_REFRESH_INDEX=1` still forces a full re-read.
 
 The 100% held-out result is scale-corpus retrieval accuracy. It is not 100% answer accuracy, patch success or Copilot-credit reduction.

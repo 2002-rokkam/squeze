@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { resolve } from 'node:path';
+import { VERSION } from '../src/mcp.js';
+
+test('the version reported by the CLI and MCP server matches package.json', async () => {
+  const pkg = JSON.parse(await readFile(resolve('package.json'), 'utf8')) as { version: string };
+  assert.equal(VERSION, pkg.version);
+});
 
 async function connect(t: test.TestContext, tools?: string) {
   const client = new Client({ name: 'reposqueeze-integration', version: '1.0' });

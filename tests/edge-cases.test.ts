@@ -1,0 +1,194 @@
+import test, { after, type TestContext } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdir, mkdtemp, rm, symlink, utimes, writeFile, rename, unlink, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Engine } from '../src/engine.js';
+import { Repository, RACY_WINDOW_MS } from '../src/repository.js';
+
+const cacheDir = await mkdtemp(join(tmpdir(), 'squeze-edge-cache-'));
+process.env.REPOSQUEEZE_CACHE_DIR = cacheDir;
+after(() => rm(cacheDir, { recursive: true, force: true }));
+
+async function fixture(t: TestContext, files: Record<string, string | Buffer>) {
+  const root = await mkdtemp(join(tmpdir(), 'squeze-edge-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  for (const [path, body] of Object.entries(files)) {
+    await mkdir(join(root, path, '..'), { recursive: true });
+    await writeFile(join(root, path), body);
+  }
+  return root;
+}
+
+async function withEnv<T>(vars: Record<string, string | undefined>, run: () => Promise<T>): Promise<T> {
+  const saved = Object.keys(vars).map(key => [key, process.env[key]] as const);
+  const assign = (key: string, value: string | undefined) => { if (value === undefined) delete process.env[key]; else process.env[key] = value; };
+  for (const [key, value] of Object.entries(vars)) assign(key, value);
+  try { return await run(); } finally { for (const [key, value] of saved) assign(key, value); }
+}
+
+const within = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timer: NodeJS.Timeout | undefined;
+  const limit = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} exceeded ${ms} ms`)), ms); });
+  return Promise.race([promise, limit]).finally(() => clearTimeout(timer));
+};
+
+// Gives an mtime far enough in the past that the next scan trusts it (outside the racy window).
+const oldTime = () => new Date(Date.now() - 60_000);
+
+test('CRLF, BOM, non-ASCII and spaced file names are indexed and their symbols are found', async t => {
+  const root = await fixture(t, {
+    'src/crlf.ts': 'export function crlfHandler() {\r\n  return 1;\r\n}\r\n',
+    'src/bom.ts': '\uFEFFexport function bomHandler() {\n  return 2;\n}\n',
+    'src/naïve café.ts': 'export function unicodeHandler() {\n  return 3;\n}\n',
+    'src/with space.ts': 'export function spacedHandler() {\n  return 4;\n}\n',
+  });
+  const snapshot = await new Repository(root).snapshot();
+  for (const path of ['src/crlf.ts', 'src/bom.ts', 'src/naïve café.ts', 'src/with space.ts']) assert.ok(snapshot.files.some(f => f.path === path), path);
+  const engine = new Engine(root);
+  for (const symbol of ['crlfHandler', 'bomHandler', 'unicodeHandler', 'spacedHandler']) {
+    const pack = await engine.context(`where is ${symbol} defined`, 3000);
+    assert.ok(pack.text.includes(symbol), symbol);
+  }
+});
+
+test('an empty repository and zero-byte files do not crash the engine', async t => {
+  const empty = await fixture(t, {});
+  const pack = await within(new Engine(empty).context('anything at all', 500), 20_000, 'empty repository');
+  assert.equal(pack.stats.files, 0);
+
+  const root = await fixture(t, { 'empty.ts': '', 'main.ts': 'export function realWork() {\n  return 5;\n}\n' });
+  const found = await new Engine(root).context('where is realWork defined', 1000);
+  assert.ok(found.text.includes('realWork'));
+});
+
+test('a symlink loop back to the repository root terminates and is not followed', async t => {
+  const root = await fixture(t, { 'a/one.ts': 'export function loopSafe() {\n  return 1;\n}\n' });
+  await symlink(root, join(root, 'a', 'loop'));
+  const snapshot = await within(new Repository(root).snapshot(), 20_000, 'symlink loop scan');
+  assert.ok(snapshot.files.some(f => f.path === 'a/one.ts'));
+  assert.ok(!snapshot.files.some(f => f.path.startsWith('a/loop/')), 'symlinked directory was followed');
+});
+
+test('a single-line minified bundle is capped and does not blow the token budget', async t => {
+  const bundle = 'var x=' + Array.from({ length: 40_000 }, (_, i) => `${i}`).join('+') + ';\n';
+  const root = await fixture(t, {
+    'dist/app.min.js': bundle,
+    'src/main.ts': 'export function quietScheduler() {\n  return 42;\n}\n',
+  });
+  const snapshot = await new Repository(root).snapshot();
+  const minified = snapshot.files.find(f => f.path === 'dist/app.min.js');
+  assert.ok(!minified || minified.generated, 'minified bundle must be flagged as generated when indexed');
+  const pack = await new Engine(root).context('where is quietScheduler defined', 800);
+  assert.ok(pack.text.includes('quietScheduler'));
+  assert.ok(pack.stats.outputTokens <= 800 * 1.1, `pack used ${pack.stats.outputTokens} tokens for an 800 budget`);
+});
+
+test('generated files are flagged, and the flag survives a warm reload', async t => {
+  const root = await fixture(t, {
+    'src/client.ts': '// Code generated by protoc-gen-ts. DO NOT EDIT.\nexport function buildClient() {\n  return 1;\n}\n',
+    'src/handwritten.ts': 'export function handWritten() {\n  return 2;\n}\n',
+  });
+  const cold = await new Repository(root).snapshot();
+  assert.equal(cold.files.find(f => f.path === 'src/client.ts')?.generated, true);
+  assert.notEqual(cold.files.find(f => f.path === 'src/handwritten.ts')?.generated, true);
+  const warm = await new Repository(root).snapshot();
+  assert.equal(warm.files.find(f => f.path === 'src/client.ts')?.generated, true);
+});
+
+test('nested .gitignore negation matches git on which files are ignored', async t => {
+  const root = await fixture(t, {
+    '.gitignore': '*.log\nbuild/\n!build/keep.ts\n',
+    'logs/.gitignore': '!keep.log\n',
+    'logs/keep.log': 'export const keepLog = 1;\n',
+    'logs/drop.log': 'export const dropLog = 1;\n',
+    'app.log': 'export const appLog = 1;\n',
+    'build/out.ts': 'export const built = 1;\n',
+    'build/keep.ts': 'export const kept = 1;\n',
+    'src/index.ts': 'export function entry() {\n  return 0;\n}\n',
+  });
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  const oracle = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' })
+    .split('\n').filter(Boolean).filter(p => !p.endsWith('.gitignore'));
+  const snapshot = await new Repository(root).snapshot();
+  const indexed = snapshot.files.map(f => f.path).filter(p => !p.endsWith('.gitignore')).sort();
+  assert.deepEqual(indexed, [...oracle].sort());
+  assert.ok(indexed.includes('logs/keep.log'));
+  assert.ok(!indexed.includes('logs/drop.log'));
+});
+
+test('monorepo packages with the same symbol name are both returned', async t => {
+  const root = await fixture(t, {
+    'packages/a/src/retry.ts': 'export function backoffDelay() {\n  return 100;\n}\n',
+    'packages/b/src/retry.ts': 'export function backoffDelay() {\n  return 200;\n}\n',
+    'packages/c/src/other.ts': 'export function unrelated() {\n  return 0;\n}\n',
+  });
+  const pack = await new Engine(root).context('where is backoffDelay defined and which package owns it', 3000);
+  assert.ok(pack.text.includes('packages/a/src/retry.ts'));
+  assert.ok(pack.text.includes('packages/b/src/retry.ts'));
+});
+
+test('latin-1 bytes and a file over the size cap are skipped without failing the snapshot', async t => {
+  const latin1 = Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x20, 0x63, 0x61, 0x66, 0x65, 0x3b, 0x0a]);
+  const huge = Buffer.alloc(3 * 1024 * 1024, 0x61);
+  const root = await fixture(t, { 'legacy/latin.ts': latin1, 'data/huge.txt': huge, 'src/ok.ts': 'export function okValue() {\n  return 1;\n}\n' });
+  const snapshot = await within(new Repository(root).snapshot(), 30_000, 'latin-1 and oversized files');
+  assert.ok(snapshot.files.some(f => f.path === 'src/ok.ts'));
+  assert.ok(!snapshot.files.some(f => f.path === 'data/huge.txt'), 'oversized file must not be indexed');
+});
+
+test('cascade mode on a 300-file repository still finds the right module', async t => {
+  const files: Record<string, string> = {};
+  for (let i = 0; i < 300; i++) files[`modules/m${String(i).padStart(3, '0')}.ts`] = `export function ordinary${i}() {\n  return ${i};\n}\n`;
+  files['modules/target.ts'] = 'export function cascadeTarget() {\n  return 999;\n}\n';
+  const root = await fixture(t, files);
+  await withEnv({ REPOSQUEEZE_LARGE_THRESHOLD: '10', REPOSQUEEZE_MAX_CANDIDATES: '100' }, async () => {
+    const pack = await new Engine(root).context('where is cascadeTarget defined', 1500);
+    assert.equal(pack.stats.indexMode, 'cascade');
+    assert.ok(pack.text.includes('modules/target.ts'));
+    assert.ok(pack.text.includes('cascadeTarget'));
+  });
+});
+
+test('edits, renames, deletes and additions are visible on the very next run, even with a restored mtime', async t => {
+  const root = await fixture(t, {
+    'src/pricing.ts': 'export function quoteAlpha() {\n  return 1;\n}\n',
+    'src/old-name.ts': 'export function renamedThing() {\n  return 2;\n}\n',
+    'src/doomed.ts': 'export function doomedThing() {\n  return 3;\n}\n',
+  });
+  await utimes(join(root, 'src/pricing.ts'), oldTime(), oldTime());
+  const engine = new Engine(root);
+  assert.ok((await engine.context('where is quoteAlpha defined', 1000)).text.includes('quoteAlpha'));
+
+  // Same byte length, different content, modification time restored to the original value.
+  const before = await stat(join(root, 'src/pricing.ts'));
+  await writeFile(join(root, 'src/pricing.ts'), 'export function quoteBeta() {\n  return 1;\n}\n');
+  await utimes(join(root, 'src/pricing.ts'), before.atime, before.mtime);
+  const afterEdit = await new Engine(root).context('where is quoteBeta defined', 1000);
+  assert.ok(afterEdit.text.includes('quoteBeta'), 'same-size edit with restored mtime must be seen');
+
+  await rename(join(root, 'src/old-name.ts'), join(root, 'src/new-name.ts'));
+  const renamed = await new Engine(root).context('where is renamedThing defined', 1000);
+  assert.ok(renamed.text.includes('src/new-name.ts'));
+  assert.ok(!renamed.text.includes('src/old-name.ts'));
+
+  await unlink(join(root, 'src/doomed.ts'));
+  const deleted = await new Engine(root).context('where is doomedThing defined', 1000);
+  assert.ok(!deleted.text.includes('doomedThing'), 'deleted file must not be returned');
+
+  await writeFile(join(root, 'src/added.ts'), 'export function addedLater() {\n  return 4;\n}\n');
+  const added = await new Engine(root).context('where is addedLater defined', 1000);
+  assert.ok(added.text.includes('addedLater'));
+});
+
+test('an edit made inside the racy window is re-read on the next scan, not served stale', async t => {
+  const root = await fixture(t, { 'src/racy.ts': 'export function racyOld() {\n  return 1;\n}\n' });
+  await new Repository(root).snapshot();
+  await writeFile(join(root, 'src/racy.ts'), 'export function racyNew() {\n  return 2;\n}\n');
+  const pack = await new Engine(root).context('where is racyNew defined', 1000);
+  assert.ok(pack.text.includes('racyNew'));
+  await new Promise(done => setTimeout(done, RACY_WINDOW_MS + 500));
+  const settled = await new Engine(root).context('where is racyNew defined', 1000);
+  assert.ok(settled.text.includes('racyNew'));
+});
