@@ -41,6 +41,7 @@
     "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-cli-2.2.1.vsix",
     "prepare": "npm run build",
     "test:editor": "node scripts/test-extension.mjs",
+    "test:ui": "node --import tsx --test tests/ui/*.test.ts",
     "bench:live": "node --import tsx scripts/live-eval.ts",
     "bench:formats": "node --import tsx scripts/format-benchmark.ts",
     "bench:v2:development": "node --import tsx scripts/benchmark-v2-arb.ts development",

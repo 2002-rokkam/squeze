@@ -844,6 +844,12 @@
         opened: counters.opened,
       };
     },
+    /** Canvas position of a shown file, so tests can hover or click it. */
+    screenOf(path) {
+      const index = model.nodes.findIndex(node => node.path === path);
+      if (index < 0) return null;
+      return { x: model.nodes[index].x * view.scale + view.tx, y: model.nodes[index].y * view.scale + view.ty };
+    },
   };
 
   const initialNode = byId('squeze-model');
