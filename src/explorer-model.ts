@@ -90,6 +90,16 @@ export function isShownPath(model: ExplorerModel, path: string): boolean {
   return model.nodes.some(node => node.path === path);
 }
 
+const MAX_OPEN_PATH = 1024;
+
+/** Reads the path from a webview `open` message; anything else yields undefined. */
+export function explorerOpenPath(message: unknown): string | undefined {
+  if (typeof message !== 'object' || message === null) return undefined;
+  const { type, path } = message as { type?: unknown; path?: unknown };
+  if (type !== 'open' || typeof path !== 'string' || path.length === 0 || path.length > MAX_OPEN_PATH) return undefined;
+  return path;
+}
+
 export function buildExplorerModel(graph: CodeGraph, options: ExplorerOptions = {}): ExplorerModel {
   const maxNodes = clampInt(options.maxNodes, 1, MAX_EXPLORER_NODES, DEFAULT_EXPLORER_NODES);
   const maxEdges = clampInt(options.maxEdges, 0, MAX_EXPLORER_EDGES, DEFAULT_EXPLORER_EDGES);

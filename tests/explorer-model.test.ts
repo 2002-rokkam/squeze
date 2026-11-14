@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSource, hash, languageFor } from '../src/parser.js';
 import { buildGraph, type CodeGraph } from '../src/graph.js';
-import { buildExplorerModel, isShownPath, type ExplorerModel } from '../src/explorer-model.js';
+import { buildExplorerModel, explorerOpenPath, isShownPath, type ExplorerModel } from '../src/explorer-model.js';
 import type { Snapshot, SourceFile } from '../src/types.js';
 
 async function snapshotFrom(files: Record<string, string>): Promise<Snapshot> {
@@ -170,6 +170,19 @@ test('isShownPath: only files the model shows can be opened from the Explorer', 
   const hidden = Array.from({ length: capped.graph.fileCount }, (_, file) => pathOf(capped.graph, file)).find(path => !shown.has(path));
   assert.ok(hidden !== undefined);
   assert.equal(isShownPath(capped.model, hidden), false);
+});
+
+test('explorerOpenPath: accepts only well-formed open messages', () => {
+  assert.equal(explorerOpenPath({ type: 'open', path: 'src/app.ts' }), 'src/app.ts');
+  assert.equal(explorerOpenPath({ type: 'close', path: 'src/app.ts' }), undefined);
+  assert.equal(explorerOpenPath({ type: 'open', path: 42 }), undefined);
+  assert.equal(explorerOpenPath({ type: 'open', path: '' }), undefined);
+  assert.equal(explorerOpenPath({ type: 'open', path: 'a'.repeat(1025) }), undefined);
+  assert.equal(explorerOpenPath({ type: 'open', path: 'a'.repeat(1024) }), 'a'.repeat(1024));
+  assert.equal(explorerOpenPath({ type: 'open' }), undefined);
+  assert.equal(explorerOpenPath(null), undefined);
+  assert.equal(explorerOpenPath('open'), undefined);
+  assert.equal(explorerOpenPath(undefined), undefined);
 });
 
 test('buildExplorerModel: an empty repository gives an empty model', async () => {
