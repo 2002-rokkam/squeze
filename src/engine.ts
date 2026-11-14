@@ -1,4 +1,4 @@
-import { Repository } from './repository.js';
+import { Repository, SourceChangedError } from './repository.js';
 import { SemanticIndex } from './semantic.js';
 import { contextPackV2, rankV2 } from './v2.js';
 import { resolveFeatures, type FeatureSet } from './features.js';
@@ -16,6 +16,7 @@ export interface EngineOptions {
 
 const MAX_QUERY_CHARS = 8000;
 const HARD_QUERY_LIMIT = 1_000_000;
+const MAX_PACK_ATTEMPTS = 3;
 
 
 export class Engine extends Repository {
@@ -38,6 +39,19 @@ export class Engine extends Repository {
     if (raw.length > MAX_QUERY_CHARS && !this.features.has('condense')) throw new Error('query must contain 1–8000 characters');
     // Pasted issues and logs above the limit are condensed to their high-signal parts instead of being rejected.
     const text = raw.length > MAX_QUERY_CHARS ? condenseQuery(raw, 6000) : raw;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const pack = await this.buildPack(text, budget, known);
+        pack.stats.elapsedMs = performance.now() - started;
+        return pack;
+      } catch (error) {
+        // A file edited or deleted after it was indexed fails its text read; indexing again picks up its current state.
+        if (!(error instanceof SourceChangedError) || attempt >= MAX_PACK_ATTEMPTS) throw error;
+      }
+    }
+  }
+
+  private async buildPack(text: string, budget: number, known: string[]): Promise<Pack> {
     const snapshot = await this.snapshot(text);
     let semanticScores: Map<string, number> | undefined;
     if (this.semantic) {
@@ -49,9 +63,7 @@ export class Engine extends Repository {
     }
     // PCR is the default. Embeddings, when enabled, are fused as one more rank signal.
     const git = this.features.has('git') ? await loadGitSignals(this.root) : undefined;
-    const pack = contextPackV2(snapshot, text, budget, known, undefined, semanticScores, this.features, git);
-    pack.stats.elapsedMs = performance.now() - started;
-    return pack;
+    return contextPackV2(snapshot, text, budget, known, undefined, semanticScores, this.features, git);
   }
 
   async expandRange(path: string, start: number, end: number, budget = 3000): Promise<string> {

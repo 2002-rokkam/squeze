@@ -67,3 +67,39 @@ test('with +git, files with uncommitted work are preferred among otherwise ident
   const pack = await new Engine(root, { features: '+git' }).context('syncAccount fetchAccount', 800);
   assert.equal(pack.evidence.find(e => e.kind !== 'pointer')!.path, 'src/two.ts');
 });
+
+const LEDGER = 'export function postEntry(amount: number) {\n  return amount;\n}\n';
+
+/** An engine whose `between` hook runs after each snapshot, i.e. after indexing and before the text is read. */
+function racingEngine(root: string, between: (attempt: number) => Promise<void>) {
+  let attempts = 0;
+  return new (class extends Engine {
+    override async snapshot(query = '') {
+      const snapshot = await super.snapshot(query);
+      await between(++attempts);
+      return snapshot;
+    }
+  })(root);
+}
+
+test('a file edited between indexing and reading its text is re-indexed; the call still succeeds with the new text', async t => {
+  const root = await fixture(t, { 'src/ledger.ts': LEDGER, 'src/other.ts': 'export const unrelated = 1;\n' });
+  const engine = racingEngine(root, async n => { if (n === 1) await writeFile(join(root, 'src/ledger.ts'), LEDGER.replace('amount;', 'amount * 100;')); });
+  const pack = await engine.context('postEntry amount', 1000);
+  assert.match(pack.text, /amount \* 100/);
+});
+
+test('a file deleted between indexing and reading its text is left out of the pack instead of failing the call', async t => {
+  const root = await fixture(t, { 'src/ledger.ts': LEDGER, 'src/other.ts': 'export const unrelated = 1;\n' });
+  const engine = racingEngine(root, async n => { if (n === 1) await rm(join(root, 'src/ledger.ts')); });
+  const pack = await engine.context('postEntry amount', 1000);
+  assert.ok(!pack.evidence.some(e => e.path === 'src/ledger.ts'));
+});
+
+test('a file that keeps changing on every attempt fails with a clear error after a bounded number of retries', async t => {
+  const root = await fixture(t, { 'src/ledger.ts': LEDGER });
+  let writes = 0;
+  const engine = racingEngine(root, async () => { await writeFile(join(root, 'src/ledger.ts'), LEDGER.replace('amount;', `amount + ${++writes};`)); });
+  await assert.rejects(() => engine.context('postEntry amount', 1000), /changed after it was indexed: src\/ledger\.ts/);
+  assert.ok(writes >= 2 && writes <= 5, `attempts: ${writes}`);
+});

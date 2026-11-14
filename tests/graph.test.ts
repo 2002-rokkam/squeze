@@ -1,6 +1,7 @@
 import test, { type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseSource, hash, languageFor } from '../src/parser.js';
 import { buildGraph, graphFromSketch, CodeGraph, GRAPH_VERSION, type GraphSketch } from '../src/graph.js';
@@ -374,10 +375,10 @@ test('50,000 files: build and analytics finish quickly and deterministically', (
 // ---------------------------------------------------------------------------------------------------------------
 // Persistence
 
+// Scratch repositories live in the OS temp directory, never inside the repository under test: the MCP and CLI
+// suites index process.cwd() concurrently and would otherwise see these files appear and disappear mid-scan.
 async function scratchRepository(t: TestContext, files: Record<string, string>): Promise<string> {
-  const base = join(process.cwd(), '.graph-test');
-  await mkdir(base, { recursive: true });
-  const root = await mkdtemp(join(base, 'repo-'));
+  const root = await mkdtemp(join(tmpdir(), 'squeze-graph-repo-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const [path, text] of Object.entries(files)) {
     await mkdir(join(root, path, '..'), { recursive: true });
@@ -388,7 +389,7 @@ async function scratchRepository(t: TestContext, files: Record<string, string>):
 
 test('loadGraph caches the graph and invalidates it when the repository changes', async t => {
   const previous = process.env.REPOSQUEEZE_CACHE_DIR;
-  const cacheDir = join(process.cwd(), '.graph-test', `cache-${process.pid}`);
+  const cacheDir = await mkdtemp(join(tmpdir(), 'squeze-graph-cache-'));
   process.env.REPOSQUEEZE_CACHE_DIR = cacheDir;
   t.after(async () => { if (previous === undefined) delete process.env.REPOSQUEEZE_CACHE_DIR; else process.env.REPOSQUEEZE_CACHE_DIR = previous; await rm(cacheDir, { recursive: true, force: true }); });
   const root = await scratchRepository(t, {
