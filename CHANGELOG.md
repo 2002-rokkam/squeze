@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Index reuse also checks change time and inode, so a same-size edit whose modification time was restored is re-read. Files whose newest timestamp is within two seconds of the scan are always re-read (`RACY_WINDOW_MS`). Cache format version is 2; older caches are discarded once.
+
+### Fixed
+- A file changed between indexing and text load no longer fails the whole `context` call; the pack is rebuilt (bounded to three attempts).
+- Test scratch repositories and caches live in the OS temp directory, not under the repository root.
+
 ## 2.2.1
 
 Evidence for every item is in the README, section "Evidence".

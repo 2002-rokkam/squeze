@@ -1,11 +1,11 @@
 import test, { after, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, mkdir, symlink, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, mkdir, symlink, rm, stat, utimes } from 'node:fs/promises';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { Repository, allowedPath } from '../src/repository.js';
+import { Repository, RACY_WINDOW_MS, allowedPath } from '../src/repository.js';
 import { contextPack, expand, repositoryMap, DEFAULTS } from '../src/context.js';
 import { parseSource } from '../src/parser.js';
 import { tokens } from '../src/tokens.js';
@@ -26,6 +26,17 @@ async function fixture(t: TestContext, files:Record<string,string>) {
   for(const [path,text] of Object.entries(files)) {await mkdir(join(root,path,'..'),{recursive:true});await writeFile(join(root,path),text);}
   return root;
 }
+// Waits past the racy window, so timestamps written by the fixture are trusted by the next scan.
+const settle = () => new Promise<void>(done => setTimeout(done, RACY_WINDOW_MS + 500));
+const waitUntil = (instant: number) => new Promise<void>(done => setTimeout(done, Math.max(0, instant - Date.now())));
+async function withEnv<T>(vars: Record<string, string | undefined>, run: () => Promise<T>): Promise<T> {
+  const saved = Object.keys(vars).map(key => [key, process.env[key]] as const);
+  const assign = (key: string, value: string | undefined) => { if (value === undefined) delete process.env[key]; else process.env[key] = value; };
+  for (const [key, value] of Object.entries(vars)) assign(key, value);
+  try { return await run(); } finally { for (const [key, value] of saved) assign(key, value); }
+}
+const moduleFiles = (count: number) => Object.fromEntries(Array.from({ length: count }, (_, i) => [`modules/m${String(i).padStart(3, '0')}.ts`, `export function ordinary${i}() {\n return ${i};\n}\n`]));
+const cascadeEnv = { REPOSQUEEZE_LARGE_THRESHOLD: '10', REPOSQUEEZE_MAX_CANDIDATES: '100' };
 test('excludes ignored, secret, binary and symlinked files in non-git repositories',async t=>{
   const root=await fixture(t,{'.gitignore':'ignored/\n','src/.gitignore':'local.ts\n','.reposqueeze-v2ignore':'custom.txt\n','main.ts':'export const publicValue=3;','ignored/private.ts':'do not index','src/local.ts':'private','custom.txt':'private','.env':'SECRET=123','key.pem':'private','data.bin':'abc\0xyz','secret-inline.ts':'const api_key="abcdefghijklmnopqrstuvwxyz0123456789";'});
   await symlink('/etc/passwd',join(root,'outside.txt'));
@@ -57,6 +68,7 @@ test('large-repository cascade indexes all files, parses bounded candidates, and
   const root=await fixture(t,files),oldThreshold=process.env.REPOSQUEEZE_LARGE_THRESHOLD,oldCandidates=process.env.REPOSQUEEZE_MAX_CANDIDATES;
   process.env.REPOSQUEEZE_LARGE_THRESHOLD='10';process.env.REPOSQUEEZE_MAX_CANDIDATES='100';
   try {
+    await settle();
     const repo=new Repository(root),first=await repo.snapshot('nebulaCheckpoint held-out-sentinel');
     assert.equal(first.indexMode,'cascade');assert.equal(first.totalFiles,240);assert(first.files.length<=100);assert(first.files.some(file=>file.path==='modules/m239.ts'));assert(!first.truncated);
     const second=await repo.snapshot('nebulaCheckpoint held-out-sentinel');
@@ -66,6 +78,41 @@ test('large-repository cascade indexes all files, parses bounded candidates, and
     if(oldThreshold===undefined)delete process.env.REPOSQUEEZE_LARGE_THRESHOLD;else process.env.REPOSQUEEZE_LARGE_THRESHOLD=oldThreshold;
     if(oldCandidates===undefined)delete process.env.REPOSQUEEZE_MAX_CANDIDATES;else process.env.REPOSQUEEZE_MAX_CANDIDATES=oldCandidates;
   }
+});
+test('cascade re-reads a same-size edit whose modification time was restored',async t=>{
+  const root=await fixture(t,moduleFiles(240));
+  await withEnv(cascadeEnv,async()=>{
+    await settle();
+    const repo=new Repository(root),first=await repo.snapshot('ordinary100');
+    const target=join(root,'modules/m100.ts'),before=await stat(target);
+    await writeFile(target,'export function ordinary100() {\n return 999;\n}\n');
+    await utimes(target,before.atime,before.mtime);
+    await settle();
+    const second=await repo.snapshot('ordinary100');
+    const rebuilt=await withEnv({REPOSQUEEZE_REFRESH_INDEX:'1'},()=>new Repository(root).snapshot('ordinary100'));
+    assert.notEqual(second.revision,first.revision,'a stale sketch must not keep the old revision');
+    assert.equal(second.revision,rebuilt.revision);
+    assert.match(second.files.find(file=>file.path==='modules/m100.ts')?.text??'',/return 999;/);
+  });
+});
+test('cascade does not trust timestamps still inside the racy window',async t=>{
+  const files=moduleFiles(240),root=await fixture(t,files);
+  // A future modification time keeps every file racy until a known instant, so the scans below do not depend on machine speed.
+  const mtime=new Date(Date.now()+2*RACY_WINDOW_MS);
+  for(const path of Object.keys(files)) await utimes(join(root,path),mtime,mtime);
+  await withEnv(cascadeEnv,async()=>{
+    const repo=new Repository(root);
+    const cold=await repo.snapshot('ordinary100');
+    assert.match(cold.diagnostics!.join('\n'),/0 file sketches reused and 240 refreshed/);
+    const warm=await repo.snapshot('ordinary100');
+    assert.match(warm.diagnostics!.join('\n'),/0 file sketches reused and 240 refreshed/,'entries stamped inside the racy window are re-read');
+    await waitUntil(mtime.getTime()+RACY_WINDOW_MS+500);
+    const healed=await repo.snapshot('ordinary100');
+    assert.match(healed.diagnostics!.join('\n'),/0 file sketches reused and 240 refreshed/,'the first scan after the window records settled stamps');
+    const steady=await repo.snapshot('ordinary100');
+    assert.match(steady.diagnostics!.join('\n'),/240 file sketches reused and 0 refreshed/);
+    assert.equal(steady.revision,cold.revision);
+  });
 });
 const languages:Record<string,string>={
   'a.ts':'export function greet(name: string) {\n return name;\n}',

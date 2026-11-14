@@ -22,7 +22,7 @@ import { TOKENIZER_VERSION } from './tokenize.js';
 export const PARSER_VERSION = 1;
 // Bump whenever readText()/textFromBytes() (secret redaction, decoding) produces different text for the same bytes.
 export const TEXT_PIPELINE_VERSION = 2;
-export const CACHE_FORMAT_VERSION = 1;
+export const CACHE_FORMAT_VERSION = 2;
 
 export const MAX_CACHE_FILE_BYTES = 1024 * 1024 * 1024;
 const MAX_TEMP_AGE_MS = 60 * 60 * 1000;

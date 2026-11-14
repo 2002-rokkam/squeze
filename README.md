@@ -300,7 +300,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 ## Limitations
 
 - Retrieval is lexical and structural; a task whose words never appear near the relevant code can be missed. Read the "Also relevant" pointers, `expand`, and fall back to normal search when the pack says evidence is weak.
-- Above 5,000 files a file-level sketch chooses the candidates that get parsed. Timestamp-preserving edits need `REPOSQUEEZE_REFRESH_INDEX=1`.
+- Above 5,000 files a file-level sketch chooses the candidates that get parsed. Index reuse trusts size, modification time, change time and inode. Change time cannot be set from user space, so a same-size edit is still caught when its modification time was restored. Set `REPOSQUEEZE_REFRESH_INDEX=1` to force a full re-read.
 - Safety limits: 100,000 files, 2 GiB indexed text, 2 MiB per file, depth 60. Exceeding one is reported in the output.
 - Token counts use `o200k_base`; provider counts differ.
 - Windows: the CLI and extension are built for it, but some benchmark and chunker tests still assume `/` path separators, so the Windows CI job is informational.

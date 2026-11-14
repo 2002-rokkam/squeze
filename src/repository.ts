@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import { closeSync, constants as fsConstants, fstatSync, openSync, readFileSync, realpathSync } from 'node:fs';
+import { closeSync, constants as fsConstants, fstatSync, openSync, readFileSync, realpathSync, type Stats } from 'node:fs';
 import { lstat, open, readdir, readFile, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, posix, relative, resolve, sep } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import ignore, { type Ignore } from 'ignore';
 import { type FileIndexResult } from './file-indexer.js';
-import { FileTable, StringTable, TextCache, type TableItem } from './file-table.js';
+import { FileTable, holdsStamp, StringTable, TextCache, type FileStamp, type TableItem } from './file-table.js';
 import { AdaptiveIndexer } from './index-pool.js';
 import { hash, languageFor } from './parser.js';
 import { makeSketch, selectCandidates, SketchTable, type Sketch } from './scale.js';
@@ -37,11 +37,27 @@ const TABLE_FILE = 'index-v1.bin', SKETCH_FILE = 'sketch-v1.bin', STATS_FILE = '
 // Up to this many eligible files, and this many bytes, an unchanged size+mtime is not trusted: the file is re-read and
 // re-hashed (about 100 ms per 25 MB), so edits that preserve the modification time are never missed.
 const VERIFY_FILE_LIMIT = 5000, VERIFY_MAX_BYTES = 256 * 1024 * 1024;
+// A file changed this close to the start of a scan can change again without moving its stamps (timestamps have coarse
+// granularity), so its stamps are not trusted until the window has passed.
+export const RACY_WINDOW_MS = 2000;
 const MAX_PARSED_FILES = 6000;
 const NOT_EXPANDABLE = 'Path is excluded, absent, outside repository, or beyond scan limits';
 const NO_FOLLOW = fsConstants.O_NOFOLLOW ?? 0;
 
-interface CandidateMeta {path:string;size:number;mtimeMs:number}
+/** A file as seen by a scan; `racy` marks stamps too recent to trust (see RACY_WINDOW_MS). */
+interface CandidateMeta extends FileStamp { path: string; racy: boolean }
+
+/** Stamps of `stat`, observed by a scan that started at `scanStart` (epoch milliseconds). */
+function candidateMeta(path: string, stat: Stats, scanStart: number): CandidateMeta {
+  // A timestamp in the future (clock skew) also counts as recent, which only costs extra reads.
+  const racy = Math.max(stat.mtimeMs, stat.ctimeMs) >= scanStart - RACY_WINDOW_MS;
+  return { path, size: stat.size, mtimeMs: Math.trunc(stat.mtimeMs), ctimeMs: stat.ctimeMs, ino: stat.ino, racy };
+}
+
+/** The stamp recorded for a file. A racy file records no change time, which no real stat matches, so it is re-read next time. */
+function recordedStamp(meta: CandidateMeta): FileStamp {
+  return { size: meta.size, mtimeMs: meta.mtimeMs, ctimeMs: meta.racy ? -1 : meta.ctimeMs, ino: meta.ino };
+}
 
 /** Thrown when a file differs from what was indexed (it changed between indexing and reading its text). */
 export class SourceChangedError extends Error {}
@@ -197,12 +213,12 @@ export class Repository {
   }
 
   /** Reads a file's text through the hook (used for files that need indexing). */
-  private async readText(_root: string, meta: CandidateMeta, bytes: Buffer): Promise<string> {
+  private async readText(_root: string, meta: { path: string }, bytes: Buffer): Promise<string> {
     return this.textFromBytes(meta.path, bytes);
   }
 
   /** Reads a file's bytes, refusing symlinks, paths outside the root and oversized files. */
-  private async readBytes(root: string, meta: CandidateMeta, directories: Map<string, Promise<boolean>>): Promise<Buffer> {
+  private async readBytes(root: string, meta: { path: string }, directories: Map<string, Promise<boolean>>): Promise<Buffer> {
     const dir = posix.dirname(meta.path) === '.' ? '' : posix.dirname(meta.path);
     let verified = directories.get(dir);
     if (!verified) {
@@ -257,10 +273,11 @@ export class Repository {
       if (error instanceof Error && error.message === NOT_EXPANDABLE) throw error;
       // Not a Git work tree: the filesystem walk applies the same filters, which were checked above.
     }
+    const scanStart = Date.now();
     try {
       const stats = await lstat(resolve(root, path));
       if (!stats.isFile() || stats.isSymbolicLink() || stats.size > MAX_FILE_BYTES) throw new Error(NOT_EXPANDABLE);
-      return { path, size: stats.size, mtimeMs: Math.trunc(stats.mtimeMs) };
+      return candidateMeta(path, stats, scanStart);
     } catch {
       throw new Error(NOT_EXPANDABLE);
     }
@@ -308,12 +325,13 @@ export class Repository {
   private async eligibleFiles(root: string, scan: Scan): Promise<Eligible> {
     let skipped = 0, totalBytes = 0, truncated = scan.truncated;
     const metadata: CandidateMeta[] = [];
+    const scanStart = Date.now();
     const stats = await mapLimit(scan.paths, STAT_CONCURRENCY, async path => {
       if (!allowedPath(path) || (!scan.rules.trivial && await scan.rules.ignores(path))) return null;
       try {
         const stat = await lstat(resolve(root, path));
         if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_FILE_BYTES) return null;
-        return { path, size: stat.size, mtimeMs: Math.trunc(stat.mtimeMs) };
+        return candidateMeta(path, stat, scanStart);
       } catch { return null; }
     });
     for (const meta of stats) {
@@ -363,7 +381,7 @@ export class Repository {
     this.lap(state, 'assemble+save');
     const truncated = eligible.truncated;
     if (truncated) warnings.push('Repository exceeds safety limits (100,000 files / 2 GiB indexed text / 2 MiB per file / depth 60); index is incomplete.');
-    if (!verify) warnings.push('Index reuse trusts file size and modification time above 5,000 files or 256 MiB; set REPOSQUEEZE_REFRESH_INDEX=1 after timestamp-preserving external edits.');
+    if (!verify) warnings.push('Index reuse trusts file size, modification time, change time and inode above 5,000 files or 256 MiB; REPOSQUEEZE_REFRESH_INDEX=1 forces a full re-read.');
     const fallback = this.fallbackCount(table);
     if (fallback) warnings.push(`${fallback} source files have parse errors or unavailable grammars; line-window search remains active.`);
     const { files, chunks, rows } = table.materialize(state.text);
@@ -407,12 +425,12 @@ export class Repository {
     // A number stands for an unchanged sketch of `previous` (its file number); sketches are copied only if the table changes.
     const built = await mapLimit(metadata, READ_CONCURRENCY, async (meta): Promise<number | Sketch | null> => {
       const known = previous.fileOf(meta.path);
-      if (!force && known >= 0 && previous.sizes[known] === meta.size && previous.mtimes[known] === meta.mtimeMs && !(exact && previous.tokenCounts[known] < 0)) { reused++; return known; }
+      if (!force && known >= 0 && !meta.racy && holdsStamp(previous, known, meta) && !(exact && previous.tokenCounts[known] < 0)) { reused++; return known; }
       try {
         const bytes = await this.readBytes(state.root, meta, directories);
         const text = await this.readText(state.root, meta, bytes);
         refreshed++;
-        return makeSketch(meta.path, text, meta.size, meta.mtimeMs, sha256(bytes), exact ? fileTokens(meta.path, text) : -1);
+        return makeSketch(meta.path, text, recordedStamp(meta), sha256(bytes), exact ? fileTokens(meta.path, text) : -1);
       } catch { skipped++; return null; }
     });
     const kept = built.filter((sketch): sketch is number | Sketch => sketch !== null);
@@ -449,7 +467,7 @@ export class Repository {
     const { files, chunks, rows } = table.materialize(state.text);
     this.lap(state, 'materialize');
     warnings.push(`Large-repository cascade: ${files.length.toLocaleString()} candidates parsed from ${sketches.count.toLocaleString()} eligible files.`);
-    warnings.push('File sketches contain hashes, counts and term fingerprints only; returned evidence is re-read verbatim from current source. Set REPOSQUEEZE_REFRESH_INDEX=1 after timestamp-preserving external edits.');
+    warnings.push('File sketches contain hashes, counts and term fingerprints only; returned evidence is re-read verbatim from current source. Files are trusted by size, modification time, change time and inode; REPOSQUEEZE_REFRESH_INDEX=1 forces a full re-read.');
     if (!scan.git) warnings.push('Use a Git working tree for the strongest change detection and ignore behavior at this scale.');
     if (eligible.truncated) warnings.push('Repository exceeds safety limits (100,000 files / 2 GiB indexed text / 2 MiB per file / depth 60); index is incomplete.');
     const fallback = this.fallbackCount(table);
@@ -486,12 +504,13 @@ export class Repository {
       results = await mapLimit(metas, READ_CONCURRENCY, async (meta): Promise<TableItem | null> => {
         const known = old.fileOf(meta.path);
         const needsCount = exact && known >= 0 && old.tokenCounts[known] < 0;
-        if (known >= 0 && !force && !verify && !needsCount && old.sizes[known] === meta.size && old.mtimes[known] === meta.mtimeMs) { reused++; return { source: old, file: known }; }
+        if (known >= 0 && !force && !verify && !needsCount && !meta.racy && holdsStamp(old, known, meta)) { reused++; return { source: old, file: known }; }
         let bytes: Buffer;
         try { bytes = await this.readBytes(state.root, meta, directories); } catch { skipped++; return null; }
         const digest = sha256(bytes);
         if (known >= 0 && !force && old.hashHex(known) === digest) {
-          if (old.sizes[known] !== meta.size || old.mtimes[known] !== meta.mtimeMs) { old.sizes[known] = meta.size; old.mtimes[known] = meta.mtimeMs; touched = true; }
+          const stamp = recordedStamp(meta);
+          if (!holdsStamp(old, known, stamp)) { old.sizes[known] = stamp.size; old.mtimes[known] = stamp.mtimeMs; old.ctimes[known] = stamp.ctimeMs; old.inodes[known] = stamp.ino; touched = true; }
           if (needsCount) {
             try { old.tokenCounts[known] = fileTokens(meta.path, await this.readText(state.root, meta, bytes)); touched = true; } catch { /* leave unknown */ }
           }
@@ -503,7 +522,7 @@ export class Repository {
         let result: FileIndexResult;
         try { result = await indexer.index(meta.path, text); } catch { skipped++; return null; }
         parsed++;
-        return { meta: { path: meta.path, hash: digest, size: meta.size, mtimeMs: meta.mtimeMs, tokenCount: exact ? fileTokens(meta.path, text) : -1 }, result };
+        return { meta: { path: meta.path, hash: digest, ...recordedStamp(meta), tokenCount: exact ? fileTokens(meta.path, text) : -1 }, result };
       });
     } finally {
       await indexer.close();
@@ -578,7 +597,7 @@ export class Repository {
       const directories = new Map<string, Promise<boolean>>();
       const texts = await mapLimit(sample, 16, async file => {
         try {
-          const meta = { path: file.path, size: file.size, mtimeMs: 0 };
+          const meta = { path: file.path };
           return { path: file.path, text: await this.readText(state.root, meta, await this.readBytes(state.root, meta, directories)) };
         } catch { return null; }
       });

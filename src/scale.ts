@@ -1,6 +1,7 @@
 // File sketches for the large-repository cascade: one cheap record per eligible file (hash, counts, sorted term
 // fingerprints), kept in typed arrays and persisted next to the parsed-file index. Sketches never contain source text.
 import { createHash } from 'node:crypto';
+import type { FileStamp } from './file-table.js';
 import { languageFor } from './parser.js';
 import { termHash } from './search-index.js';
 import { CacheCorruptError, decodeContainer, encodeContainer } from './store.js';
@@ -12,10 +13,8 @@ const SKETCH_MAGIC = 'RSQSKTCH';
 const MAX_TERM_HASHES = 8192;
 const collator = new Intl.Collator();
 
-export interface Sketch {
+export interface Sketch extends FileStamp {
   path: string;
-  size: number;
-  mtimeMs: number;
   /** sha256 (hex) of the file bytes. */
   digest: string;
   language: string;
@@ -28,7 +27,7 @@ export interface Sketch {
   pathHashes: Uint32Array;
 }
 
-export function makeSketch(path: string, text: string, size: number, mtimeMs: number, digest: string, tokenCount = -1): Sketch {
+export function makeSketch(path: string, text: string, stamp: FileStamp, digest: string, tokenCount = -1): Sketch {
   const pathTerms = new Set(terms(path));
   const unique = new Set<number>();
   for (const term of pathTerms) unique.add(termHash(term));
@@ -42,7 +41,7 @@ export function makeSketch(path: string, text: string, size: number, mtimeMs: nu
   let lines = 1;
   for (let at = text.indexOf('\n'); at !== -1; at = text.indexOf('\n', at + 1)) lines++;
   const pathHashes = Uint32Array.from(new Set([...pathTerms].map(termHash))).sort();
-  return { path, size, mtimeMs, digest, language: languageFor(path), lines, tokenCount, termHashes, pathHashes };
+  return { path, size: stamp.size, mtimeMs: stamp.mtimeMs, ctimeMs: stamp.ctimeMs, ino: stamp.ino, digest, language: languageFor(path), lines, tokenCount, termHashes, pathHashes };
 }
 
 function contains(sorted: Uint32Array, from: number, to: number, value: number): boolean {
@@ -60,6 +59,8 @@ export class SketchTable {
   paths: string[] = [];
   sizes = new Float64Array(0);
   mtimes = new Float64Array(0);
+  ctimes = new Float64Array(0);
+  inodes = new Float64Array(0);
   digests = new Uint8Array(0);
   languageIds = new Uint32Array(0);
   languageNames: string[] = [];
@@ -95,7 +96,7 @@ export class SketchTable {
 
   sketchAt(file: number): Sketch {
     return {
-      path: this.paths[file], size: this.sizes[file], mtimeMs: this.mtimes[file], digest: this.digestHex(file), language: this.languageNames[this.languageIds[file]],
+      path: this.paths[file], size: this.sizes[file], mtimeMs: this.mtimes[file], ctimeMs: this.ctimes[file], ino: this.inodes[file], digest: this.digestHex(file), language: this.languageNames[this.languageIds[file]],
       lines: this.lines[file], tokenCount: this.tokenCounts[file], termHashes: this.hashes.subarray(this.hashStart[file], this.hashStart[file + 1]),
       pathHashes: this.pathHashes.subarray(this.pathHashStart[file], this.pathHashStart[file + 1])
     };
@@ -107,6 +108,8 @@ export class SketchTable {
     table.paths = sketches.map(sketch => sketch.path);
     table.sizes = Float64Array.from(sketches, sketch => sketch.size);
     table.mtimes = Float64Array.from(sketches, sketch => sketch.mtimeMs);
+    table.ctimes = Float64Array.from(sketches, sketch => sketch.ctimeMs);
+    table.inodes = Float64Array.from(sketches, sketch => sketch.ino);
     table.digests = new Uint8Array(count * 32);
     table.languageIds = new Uint32Array(count);
     table.lines = Uint32Array.from(sketches, sketch => sketch.lines);
@@ -135,7 +138,7 @@ export class SketchTable {
   serialize(versions: unknown, options: { compress?: boolean } = {}): Uint8Array[] {
     const header = { kind: 'sketch', versions, files: this.count, languages: this.languageNames };
     const sections = [
-      ['paths', Buffer.from(this.paths.join('\n'), 'utf8')], ['sSize', this.sizes], ['sMtime', this.mtimes], ['sDigest', this.digests], ['sLang', this.languageIds],
+      ['paths', Buffer.from(this.paths.join('\n'), 'utf8')], ['sSize', this.sizes], ['sMtime', this.mtimes], ['sCtime', this.ctimes], ['sIno', this.inodes], ['sDigest', this.digests], ['sLang', this.languageIds],
       ['sLines', this.lines], ['sTokens', this.tokenCounts], ['hStart', this.hashStart], ['hashes', this.hashes], ['pStart', this.pathHashStart], ['pHashes', this.pathHashes], ['order', this.pathOrder]
     ] as const;
     return encodeContainer(SKETCH_MAGIC, header, sections.map(([name, data]) => ({ name, data })), options);
@@ -157,6 +160,8 @@ export class SketchTable {
     table.paths = files ? text.split('\n') : [];
     table.sizes = container.array('sSize', Float64Array);
     table.mtimes = container.array('sMtime', Float64Array);
+    table.ctimes = container.array('sCtime', Float64Array);
+    table.inodes = container.array('sIno', Float64Array);
     table.digests = container.array('sDigest', Uint8Array);
     table.languageIds = container.array('sLang', Uint32Array);
     table.lines = container.array('sLines', Uint32Array);
@@ -167,6 +172,7 @@ export class SketchTable {
     table.pathHashes = container.array('pHashes', Uint32Array);
     table.pathOrder = container.array('order', Uint32Array);
     expect(table.paths.length === files && table.sizes.length === files && table.mtimes.length === files && table.digests.length === files * 32, 'column length');
+    expect(table.ctimes.length === files && table.inodes.length === files, 'column length');
     expect(table.languageIds.length === files && table.lines.length === files && table.tokenCounts.length === files && table.pathOrder.length === files, 'column length');
     expect(table.hashStart.length === files + 1 && table.pathHashStart.length === files + 1, 'offset length');
     for (const [offsets, total] of [[table.hashStart, table.hashes.length], [table.pathHashStart, table.pathHashes.length]] as const) {
@@ -176,6 +182,7 @@ export class SketchTable {
     const seen = new Uint8Array(files);
     for (let i = 0; i < files; i++) {
       expect(table.languageIds[i] < table.languageNames.length && Number.isFinite(table.sizes[i]) && Number.isFinite(table.mtimes[i]) && Number.isFinite(table.tokenCounts[i]), 'file fields');
+      expect(Number.isFinite(table.ctimes[i]) && Number.isFinite(table.inodes[i]), 'file stamp fields');
       expect(table.pathOrder[i] < files && seen[table.pathOrder[i]] === 0, 'bad path order');
       seen[table.pathOrder[i]] = 1;
     }

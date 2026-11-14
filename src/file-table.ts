@@ -78,12 +78,32 @@ export class StringTable {
   }
 }
 
-export interface FileMeta {
+/**
+ * What a file's stat says about its content, recorded with every indexed file. Equal stamps are trusted to mean equal
+ * content, so every field must change whenever the content can change.
+ */
+export interface FileStamp {
+  size: number;
+  /** Truncated to whole milliseconds. */
+  mtimeMs: number;
+  /** Changes on every write and on `utimes`, which cannot be forged from user space, so it catches restored mtimes. */
+  ctimeMs: number;
+  /** Catches replacement by a different file that happens to have the same size and timestamps. */
+  ino: number;
+}
+
+/** Recorded stamp columns of a table (both FileTable and SketchTable have them). */
+export interface StampColumns { sizes: Float64Array; mtimes: Float64Array; ctimes: Float64Array; inodes: Float64Array }
+
+/** True when the recorded stamp of `file` equals `stamp` in every field. */
+export function holdsStamp(columns: StampColumns, file: number, stamp: FileStamp): boolean {
+  return columns.sizes[file] === stamp.size && columns.mtimes[file] === stamp.mtimeMs && columns.ctimes[file] === stamp.ctimeMs && columns.inodes[file] === stamp.ino;
+}
+
+export interface FileMeta extends FileStamp {
   path: string;
   /** sha256 (hex) of the raw file bytes. */
   hash: string;
-  size: number;
-  mtimeMs: number;
   /** Exact o200k_base token count of "--- path ---\n" + text, or -1 when not computed. */
   tokenCount: number;
 }
@@ -96,6 +116,8 @@ interface FileBlock {
   hash: Uint8Array;
   size: number;
   mtimeMs: number;
+  ctimeMs: number;
+  ino: number;
   language: number;
   lines: number;
   flags: number;
@@ -129,6 +151,8 @@ export class FileTable {
   hashes = new Uint8Array(0);
   sizes = new Float64Array(0);
   mtimes = new Float64Array(0);
+  ctimes = new Float64Array(0);
+  inodes = new Float64Array(0);
   languages = new Uint32Array(0);
   lines = new Uint32Array(0);
   flags = new Uint8Array(0);
@@ -192,6 +216,8 @@ export class FileTable {
     table.hashes = new Uint8Array(files * 32);
     table.sizes = new Float64Array(files);
     table.mtimes = new Float64Array(files);
+    table.ctimes = new Float64Array(files);
+    table.inodes = new Float64Array(files);
     table.languages = new Uint32Array(files);
     table.lines = new Uint32Array(files);
     table.flags = new Uint8Array(files);
@@ -217,6 +243,8 @@ export class FileTable {
       table.hashes.set(block.hash, file * 32);
       table.sizes[file] = block.size;
       table.mtimes[file] = block.mtimeMs;
+      table.ctimes[file] = block.ctimeMs;
+      table.inodes[file] = block.ino;
       table.languages[file] = block.language;
       table.lines[file] = block.lines;
       table.flags[file] = block.flags;
@@ -329,7 +357,7 @@ export class FileTable {
       fileExtras: [...this.fileExtras], chunkExtras: [...this.chunkExtras], textOverrides: [...this.textOverrides], tfOverflow: [...this.tfOverflow]
     };
     const sections = [
-      ['paths', Buffer.from(this.paths.join('\n'), 'utf8')], ['fHash', this.hashes], ['fSize', this.sizes], ['fMtime', this.mtimes], ['fLang', this.languages],
+      ['paths', Buffer.from(this.paths.join('\n'), 'utf8')], ['fHash', this.hashes], ['fSize', this.sizes], ['fMtime', this.mtimes], ['fCtime', this.ctimes], ['fIno', this.inodes], ['fLang', this.languages],
       ['fLines', this.lines], ['fFlags', this.flags], ['fTokens', this.tokenCounts], ['fChunk', this.chunkFirst], ['fPathS', this.pathTermStart], ['fPathT', this.pathTerms],
       ['cStart', this.starts], ['cEnd', this.ends], ['cId', this.idStrings], ['cName', this.nameStrings], ['cKind', this.kindStrings], ['cLen', this.chunkLen],
       ['rowS', this.rowStart], ['rowT', this.rowTerm], ['rowF', this.rowTf], ['nameS', this.nameStart], ['nameT', this.nameTerm], ['refS', this.refStart], ['refI', this.refIds],
@@ -380,6 +408,7 @@ function blockFromTable(table: FileTable, file: number, dictionary: TermDictiona
   }
   return {
     path: table.paths[file], hash: table.hashes.subarray(file * 32, file * 32 + 32), size: table.sizes[file], mtimeMs: table.mtimes[file],
+    ctimeMs: table.ctimes[file], ino: table.inodes[file],
     language: table.languages[file], lines: table.lines[file], flags: table.flags[file], tokenCount: table.tokenCounts[file], chunkCount: c1 - c0,
     starts: table.starts.subarray(c0, c1), ends: table.ends.subarray(c0, c1), ids: table.idStrings.subarray(c0, c1), names: table.nameStrings.subarray(c0, c1),
     kinds: table.kindStrings.subarray(c0, c1), chunkLen: table.chunkLen.subarray(c0, c1),
@@ -398,7 +427,7 @@ function blockFromResult(meta: FileMeta, result: FileIndexResult, dictionary: Te
   const remap = (ids: Uint32Array) => Uint32Array.from(ids, id => termMap[id]);
   const refMap = Uint32Array.from(result.refTable, ref => strings.add(ref));
   return {
-    path: meta.path, hash: new Uint8Array(hash), size: meta.size, mtimeMs: meta.mtimeMs, language: strings.add(result.language), lines: result.lines,
+    path: meta.path, hash: new Uint8Array(hash), size: meta.size, mtimeMs: meta.mtimeMs, ctimeMs: meta.ctimeMs, ino: meta.ino, language: strings.add(result.language), lines: result.lines,
     flags: result.parsed ? 1 : 0, tokenCount: meta.tokenCount, chunkCount: result.chunkCount, starts: result.starts, ends: result.ends,
     ids: Uint32Array.from(result.ids, id => strings.addUnique(id)), names: Uint32Array.from(result.names, name => strings.add(name)),
     kinds: Uint32Array.from(result.kinds, kind => strings.add(kind)), chunkLen: result.chunkLen,
@@ -429,6 +458,8 @@ function readTable(container: ReturnType<typeof decodeContainer>, header: Record
   table.hashes = container.array('fHash', Uint8Array);
   table.sizes = container.array('fSize', Float64Array);
   table.mtimes = container.array('fMtime', Float64Array);
+  table.ctimes = container.array('fCtime', Float64Array);
+  table.inodes = container.array('fIno', Float64Array);
   table.languages = container.array('fLang', Uint32Array);
   table.lines = container.array('fLines', Uint32Array);
   table.flags = container.array('fFlags', Uint8Array);
@@ -451,6 +482,7 @@ function readTable(container: ReturnType<typeof decodeContainer>, header: Record
   table.refIds = container.array('refI', Uint32Array);
 
   expect(table.hashes.length === files * 32 && table.sizes.length === files && table.mtimes.length === files && table.languages.length === files, 'file column length');
+  expect(table.ctimes.length === files && table.inodes.length === files, 'file stamp length');
   expect(table.lines.length === files && table.flags.length === files && table.tokenCounts.length === files, 'file column length');
   expect(table.chunkFirst.length === files + 1 && table.pathTermStart.length === files + 1 && table.pathTerms.length === pathTerms, 'file offsets length');
   for (const column of [table.starts, table.ends, table.idStrings, table.nameStrings, table.kindStrings, table.chunkLen]) expect(column.length === chunks, 'chunk column length');
@@ -469,6 +501,7 @@ function readTable(container: ReturnType<typeof decodeContainer>, header: Record
   for (let i = 0; i < entries; i++) if (table.rowTf[i] === 0) throw new CacheCorruptError('zero term frequency');
   for (let file = 0; file < files; file++) {
     expect(table.flags[file] <= 1 && Number.isFinite(table.sizes[file]) && table.sizes[file] >= 0 && Number.isFinite(table.mtimes[file]) && Number.isFinite(table.tokenCounts[file]), 'file fields');
+    expect(Number.isFinite(table.ctimes[file]) && Number.isFinite(table.inodes[file]), 'file stamp fields');
     for (let c = table.chunkFirst[file]; c < table.chunkFirst[file + 1]; c++) expect(table.starts[c] >= 1 && table.starts[c] <= table.ends[c] && table.ends[c] <= table.lines[file], 'chunk range');
   }
 
