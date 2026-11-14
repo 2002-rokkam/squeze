@@ -86,6 +86,10 @@ const round = (value: number, digits: number): number => {
 
 const basename = (path: string): string => path.slice(path.lastIndexOf('/') + 1);
 
+export function isShownPath(model: ExplorerModel, path: string): boolean {
+  return model.nodes.some(node => node.path === path);
+}
+
 export function buildExplorerModel(graph: CodeGraph, options: ExplorerOptions = {}): ExplorerModel {
   const maxNodes = clampInt(options.maxNodes, 1, MAX_EXPLORER_NODES, DEFAULT_EXPLORER_NODES);
   const maxEdges = clampInt(options.maxEdges, 0, MAX_EXPLORER_EDGES, DEFAULT_EXPLORER_EDGES);

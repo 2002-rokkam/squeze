@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSource, hash, languageFor } from '../src/parser.js';
 import { buildGraph, type CodeGraph } from '../src/graph.js';
-import { buildExplorerModel, type ExplorerModel } from '../src/explorer-model.js';
+import { buildExplorerModel, isShownPath, type ExplorerModel } from '../src/explorer-model.js';
 import type { Snapshot, SourceFile } from '../src/types.js';
 
 async function snapshotFrom(files: Record<string, string>): Promise<Snapshot> {
@@ -155,6 +155,21 @@ test('buildExplorerModel: totals describe the whole graph, not only the shown sl
 test('buildExplorerModel: output survives a JSON round trip unchanged', async () => {
   const { model } = await modelFor(syntheticFiles(40));
   assert.deepEqual(JSON.parse(JSON.stringify(model)), model);
+});
+
+test('isShownPath: only files the model shows can be opened from the Explorer', async () => {
+  const full = await modelFor(sample);
+  const first = full.model.nodes[0].path;
+  assert.equal(isShownPath(full.model, first), true);
+  assert.equal(isShownPath(full.model, 'src/missing.ts'), false);
+  assert.equal(isShownPath(full.model, `./${first}`), false);
+  assert.equal(isShownPath(full.model, ''), false);
+
+  const capped = await modelFor(syntheticFiles(40), { maxNodes: 5 });
+  const shown = new Set(capped.model.nodes.map(node => node.path));
+  const hidden = Array.from({ length: capped.graph.fileCount }, (_, file) => pathOf(capped.graph, file)).find(path => !shown.has(path));
+  assert.ok(hidden !== undefined);
+  assert.equal(isShownPath(capped.model, hidden), false);
 });
 
 test('buildExplorerModel: an empty repository gives an empty model', async () => {
