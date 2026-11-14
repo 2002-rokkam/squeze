@@ -23,6 +23,7 @@
   "files": [
     "dist/*.cjs",
     "assets",
+    "media",
     "skills",
     "README.md",
     "LICENSE",
@@ -86,6 +87,18 @@
       {
         "command": "squeze.setup",
         "title": "Squeze: Install Copilot Instructions"
+      },
+      {
+        "command": "squeze.explore",
+        "title": "Squeze: Open Code Explorer"
+      },
+      {
+        "command": "squeze.refresh",
+        "title": "Squeze: Refresh Index"
+      },
+      {
+        "command": "squeze.stats",
+        "title": "Squeze: Show Token Savings"
       }
     ],
     "configuration": {
@@ -107,6 +120,11 @@
           "type": "string",
           "default": "",
           "description": "Advanced: feature switches such as \"-prf,-git\" (same syntax as the RSQ_FEATURES environment variable). Empty keeps the defaults."
+        },
+        "squeze.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Index the workspace in the background when a trusted folder opens, and refresh the index after file changes (debounced). Turn off to index only when you run a Squeze command."
         }
       }
     },
