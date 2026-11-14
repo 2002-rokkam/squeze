@@ -3,13 +3,13 @@
 **Local, deterministic, token-budgeted repository context for coding agents.**
 Give it a task, an error or a stack trace; it returns the few verbatim, line-cited source excerpts that matter, inside a token budget you choose. It runs as a CLI, an MCP server and a VS Code / GitHub Copilot tool. No model calls, no network, no telemetry.
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green) ![version](https://img.shields.io/badge/version-2.2.1-informational)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green) ![version](https://img.shields.io/badge/version-3.0.0-informational)
 
-> **Status of the evidence.** Every number in this document comes from a script in this repository and a raw result file you can inspect. Section [Evidence](#evidence) lists what was measured, how, the confidence intervals and what was **not** proven. Nothing here claims 100% accuracy, answer quality or billing savings.
+> **Status of the evidence.** Every public number in this document comes from a script in this repository and a raw result file you can inspect. The one private-repository result in section 0 of [Evidence](#evidence) is aggregate only and cannot be reproduced from this repository. For 3.0, the public non-inferiority test against whole-repository reading **failed**; section 0 gives the numbers. Section [Evidence](#evidence) lists what was measured, how, the confidence intervals and what was **not** proven. Nothing here claims 100% accuracy, answer quality or billing savings.
 
 ## Contents
 
-1. [Why](#why) · 2. [Install](#install) · 3. [Use](#use) · 4. [How it works](#how-it-works) · 5. [What is new in 2.2](#what-is-new-in-22) · 6. [Evidence](#evidence) · 7. [Configuration](#configuration) · 8. [Security model](#security-model) · 9. [Limitations](#limitations) · 10. [Reproduce](#reproduce) · 11. [Repository map](#repository-map)
+1. [Why](#why) · 2. [Install](#install) · 3. [Use](#use) · 4. [How it works](#how-it-works) · 5. [What is new in 3.0](#what-is-new-in-30) · 6. [What is new in 2.2](#what-is-new-in-22) · 7. [Evidence](#evidence) · 8. [Configuration](#configuration) · 9. [Security model](#security-model) · 10. [Limitations](#limitations) · 11. [Reproduce](#reproduce) · 12. [Repository map](#repository-map)
 
 ## Why
 
@@ -25,11 +25,11 @@ An agent that reads whole files to answer "where is retry backoff computed?" pay
 Requires Node.js 20.19 or newer.
 
 ```sh
-npm install -g squeze-cli@2.2.0    # installs the `squeze` command (pin the version; see note)
-npx -y squeze-cli@2.2.0 --help     # or run without installing
+npm install -g squeze-cli    # installs the `squeze` command
+npx -y squeze-cli --help     # or run without installing
 ```
 
-> Note: `squeze-cli@2.2.0` is the published release. The `latest` tag still points to a placeholder while npm reviews 2.2.1; without `@2.2.0` `npm install -g squeze-cli` installs the placeholder and gives no command. Drop the pin once `2.2.1` is approved.
+> Note: `npm install -g squeze-cli` installs the release tagged `latest` on npm. To pin a version, use `squeze-cli@3.0.0` (or an earlier version such as `squeze-cli@2.2.1`).
 
 From source:
 
@@ -45,8 +45,8 @@ The older `reposqueeze-v2` command name still works as an alias. Tool names chan
 ### VS Code
 
 ```sh
-npm run package                                  # writes releases/squeze-cli-2.2.1.vsix
-code --install-extension releases/squeze-cli-2.2.1.vsix
+npm run package                                  # writes releases/squeze-cli-3.0.0.vsix
+code --install-extension releases/squeze-cli-3.0.0.vsix
 ```
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
@@ -121,12 +121,29 @@ flowchart LR
   K --> O[Verbatim cited excerpts]
 ```
 
-1. **Index.** Files are enumerated through Git (or a bounded walk), filtered (ignored, binary, oversized, symlinks, secret paths), redacted, chunked and written to a cache directory *outside* the repository (`$XDG_CACHE_HOME/reposqueeze`, `~/Library/Caches/reposqueeze`, or `REPOSQUEEZE_CACHE_DIR`). Unchanged files are not re-parsed. Above 5,000 files a file-level sketch selects candidates before parsing.
+1. **Index.** Files are enumerated through Git (or a bounded walk), filtered (ignored, binary, oversized, symlinks, secret paths), redacted, chunked and written to a cache directory *outside* the repository (`%LOCALAPPDATA%\reposqueeze` on Windows, `~/Library/Caches/reposqueeze` on macOS, `$XDG_CACHE_HOME/reposqueeze` or `~/.cache/reposqueeze` elsewhere; override with `REPOSQUEEZE_CACHE_DIR`). Each repository gets its own subfolder. Unchanged files are not re-parsed. Above 5,000 files a file-level sketch selects candidates before parsing.
 2. **Perturbation-consensus retrieval (PCR).** The request is ranked as up to six deterministic views (original, diagnostic lines, identifiers, three leave-one-bucket-out views). Reciprocal-rank fusion rewards evidence that survives wording removal; rare query terms become *evidence obligations* that are reported when missing.
 3. **Signals.** Pseudo-relevance feedback terms, identifier-name and adjacent-word matches, and a mild prior against tests, docs and vendored code unless the query asks for them. Optional (opt-in): stack-frame localisation and Git history signals.
 4. **Packing.** Greedy selection by marginal value per token: whole definitions when they fit, otherwise the query-densest window with the declaration line kept, identical copies collapsed, leftover budget spent on one-line pointers.
 
 Details and rationale: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). A source-verified survey of the techniques considered (about 95 sources, each marked verified or unverified): [docs/V3_RESEARCH.md](docs/V3_RESEARCH.md).
+
+## What is new in 3.0
+
+3.0 adds a VS Code Code Explorer, background index refresh, a token-savings ledger, fixes, and a proof harness. The public proof is mixed: the non-inferiority test failed (section 0 of [Evidence](#evidence)).
+
+| Area | Change |
+| --- | --- |
+| Code Explorer | `Squeze: Open Code Explorer`: a searchable, interactive map of the code graph with subsystems, hubs and links. Renders under a per-render nonce CSP with no network requests. Draws the top 600 files by rank by default (2,000 maximum) with at most 6,000 edges; when files are left out the summary reads "showing top N files", and graphs built from a candidate subset are labelled "PARTIAL graph" |
+| Index freshness | `squeze.autoRefresh` (on by default) and `Squeze: Refresh Index`. File changes are picked up through a debounced, single-flight refresh |
+| Token savings | `Squeze: Show Token Savings`: a local ledger of input tokens avoided by each pack call (whole-repository input minus pack output). It is an estimate from pack calls only, not billing data |
+| Reuse safety | Index reuse also checks change time and inode. Files whose newest timestamp is within 2 s of the scan are always re-read. Cache format 2: older caches are discarded once |
+| Graph command | `Squeze: Show Code Graph` now opens the Code Explorer. The `squeze graph --html` export is unchanged (byte-identical on express, gin and requests) |
+| Fixes | A nested `.gitignore` that re-includes a file is honoured (checked against `git ls-files`); the MCP server reported 2.2.0 while the package was 2.2.1; a file changed between indexing and loading no longer fails `context` (the pack is rebuilt, at most three attempts); test scratch repositories moved out of the repository root |
+| Tests | `npm test` (678 tests); `npm run test:ui` (9 browser tests of the Explorer at 1440, 768 and 360 px; run `npx playwright install chromium` first); `npm run test:editor` (VS Code extension host; set `VSCODE_EXECUTABLE_PATH` to a VS Code binary) |
+| Proof | `npm run bench:proof` (public corpus at pinned commits; needs network); `node --import tsx bench/proof/run.ts local <path>` (private repository; aggregate output only) |
+
+Behaviour changes to know about: `Squeze: Show Code Graph` opens the Explorer, and the cache format moved to version 2 (older caches are discarded once).
 
 ## What is new in 2.2
 
@@ -146,11 +163,28 @@ Details and rationale: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). A source-ve
 
 ## Standard and status
 
-The bar for the code graph and the caveman style, with each target marked met or not met, is in [docs/STANDARD.md](docs/STANDARD.md). Squeze is not yet better than Graphify on every measure: it has no call edges and no document support, and no head-to-head study has been run.
+The bar for the code graph and the caveman output style, with each target marked met or not met, is in [docs/STANDARD.md](docs/STANDARD.md). Squeze is not yet better than Graphify on every measure. It has call edges, but on gin they agree with Graphify's calls at 67% precision and 52% recall (the proxies in the standard; target not met). The only head-to-head run covers calls on one repository. Dependents, path queries and token counts against Graphify have not been compared, and the graph covers only source files in the 19 languages in [src/langs.ts](src/langs.ts), so docs and config files are not in it.
 
 ## Evidence
 
-All results below are retrieval metrics under a fixed token budget, not model answer quality. "Baseline" is the unmodified upstream 2.1.0.
+All results below are retrieval metrics under a fixed token budget, not model answer quality. In sections 1 to 4, "baseline" is the unmodified upstream 2.1.0.
+
+### 0. Retrieval against grep and whole-repository reading (3.0)
+
+Symbol lookups on 9 pinned public repositories (up to 40 cases each, 360 in total) and one private repository (40 cases; aggregate numbers only). Budget 3,000 tokens, `o200k_base`, seed 1729. Grep arm: `\bNAME\b` across the repository, files ranked by match count, 200 listing lines, up to 8 whole files read. Squeze arm: one `context` pack with no follow-up `expand`, which is conservative for squeze. Raw output: [bench/proof/results/public.md](bench/proof/results/public.md) (public) and [bench/proof/results/private-A.md](bench/proof/results/private-A.md) (private; aggregate only, the repository is not named and cannot be re-run from this repository).
+
+| Metric | Public (9 repos, n = 360) | Private (1 repo, n = 40) |
+| --- | ---: | ---: |
+| Recall, squeze | 96.9% [95.0, 98.6] | 100% |
+| Recall, grep | 95.6% [93.3, 97.5] | 95.0% [87.5, 100] |
+| Recall loss vs whole-repository reading (100%); non-inferiority margin 2.0 points | 3.1 points [1.4, 5.0]: **fails** | 0.0 points: passes |
+| Input tokens vs grep | 87.3% fewer [84.8, 89.2] | 86.2% fewer [79.8, 90.4] |
+| Cases only squeze gets right / only grep gets right (McNemar) | 15 / 10, p = 0.42 | 2 / 0, p = 0.5 |
+| Pack latency p50 / p90 (warm) | 1,443 / 4,462 ms | 923 / 1,973 ms |
+
+Per repository, five of nine fail the margin on their own: express (12.5-point loss), bat (7.5), and flask, gin and django (2.5 each). requests, ripgrep, gson and preact have no loss. Squeze is cheaper than grep in 280 of 360 public cases.
+
+What this shows: on symbol lookups, squeze's recall is not significantly different from grep's, and it uses about 87% fewer input tokens. What it does not show: on the public corpus squeze does not meet the non-inferiority margin against whole-repository reading. The 2.0-point margin was not changed after the run. The private result passes, but it cannot be reproduced here and is not a substitute for the public result. These are symbol lookups; no model wrote an answer, so answer quality is not measured.
 
 ### 1. Real GitHub issues: SWE-bench (60 development instances)
 
@@ -197,12 +231,15 @@ Reading the table honestly: a Squeze pack costs about **4% of what the whole-fil
 
 `npm run measure:overhead`
 
-| Item | 2.1.0 | 2.2 |
+| Item | 2.1.0 | 3.0 |
 | --- | ---: | ---: |
-| MCP tool list (default tools) | 731 tokens (5 tools) | 368 tokens (3 tools) |
-| Pack header | 125 tokens | 40 tokens |
+| MCP tool list, default `--tools core` | 731 tokens (5 tools; earlier measurement, not re-run) | 548 tokens (4 tools) |
+| MCP tool list, `--tools all` | not measured | 765 tokens (6 tools) |
+| Pack header | 125 tokens | 41 tokens |
 | Framing per excerpt | 24 tokens | 15 tokens |
-| Closing note | 28 tokens | 0 tokens |
+| Closing note | 26 tokens | 0 tokens |
+
+The 3.0 column was measured with `npm run measure:overhead` on 3.0.0. The 2.1.0 pack-header, framing and closing-note values are the script's own baseline; the 2.1.0 tool-list figure is from an earlier run.
 
 ### 4. Repository map
 
@@ -246,7 +283,7 @@ Structural chunkers on real repositories: Markdown 807 files / 98.6% of non-blan
 
 Importer accuracy of `--impact` (8 files per repository, checked against a grep ground truth): **precision 75%, recall 79%** on average. Per repository: flask 100% / 87%, gson 100% / 100%, thor 100% / 100%, express 88% / 60%, ripgrep 39% / 71%, gin 25% / 58%. The low values are real: Go imports are resolved to one file rather than to the whole package, so gin and ripgrep over-report importers. An earlier version of this section said 59%; that came from a broken Go ground truth in the eval, now fixed.
 
-Against a plain grep listing the saving is small (impact 4%) and negative for overview (−12%). All 300 sampled import edges (50 per repository) exist and are spelled as the source says. The graph has no call edges and no Go package-level edges yet; see "What is not proven". Details and real output: [benchmarks/v22/graph.md](benchmarks/v22/graph.md), [docs/GRAPH.md](docs/GRAPH.md).
+Against a plain grep listing the saving is small (impact 4%) and negative for overview (−12%). All 300 sampled import edges (50 per repository) exist and are spelled as the source says. The graph has `calls` edges (a `name(` site that resolves to a definition in the same file, in an imported file, or to a name defined once in the repository; marked `EXTRACTED` or `INFERRED`) but no Go package-level edges yet; see "What is not proven". Details and real output: [benchmarks/v22/graph.md](benchmarks/v22/graph.md), [docs/GRAPH.md](docs/GRAPH.md).
 
 ### 10. Speed and memory
 
@@ -263,7 +300,7 @@ The 2.1.0 profile on the 921-file repo: tokenizing the whole repository only to 
 
 ### 11. Tests and robustness
 
-`npm test` runs 532 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). On the final tree 530 passed on the first run and the 2 that failed were wall-clock limits exceeded while the shared machine's load average was above 60 (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text); both pass when re-run (11 s and 1.6 s).
+`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.0 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
 
 A many-repository robustness and adversarial suite is in [bench/robustness](bench/robustness). Only a partial run was completed on the final build: 2 repositories (gin, requests), 32 commands, 0 crashes, 0 timeouts, 0 budget violations, 0 secret-regex hits in outputs ([report](benchmarks/v3/robustness-final.md)). That run flagged 4 of 8 repeat comparisons as non-identical while the machine load was about 50; serial re-runs of `map` on the same checkout were byte-identical 3 of 3 times and `context` cold and warm were identical on a second checkout, so the cause was not identified. The adversarial section did not finish and is **not** claimed.
 
@@ -274,7 +311,9 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 - Each new ranking feature (feedback terms, phrase matching, priors, windows, pointers, tokenizer v2) is **on by default** on the strength of the aggregate results above; a one-feature-at-a-time ablation has not been published. Switch any of them off with `RSQ_FEATURES` and report regressions.
 - Stack-frame localisation (`+frames`) and Git-history signals (`+git`) are implemented and unit-tested, use proposed boost constants, and are **off by default** until validated.
 - Timings were taken on a loaded machine.
-- The code graph has no call edges and resolves Go imports to a single file, so its impact answers are weak for gin and ripgrep (precision 25% and 39%).
+- 3.0 public proof: the non-inferiority test against whole-repository reading **failed** (loss 3.1 points, CI [1.4, 5.0], margin 2.0). The proof covers symbol lookups only, not whole questions or model answers.
+- The private-repository result (section 0) is aggregate only and cannot be reproduced from this repository.
+- The code graph's call edges are name-based, without type resolution, and it resolves Go imports to a single file, so its impact answers are weak for gin and ripgrep (precision 25% and 39%).
 - The multi-repository robustness run is partial (2 repositories) and the byte-for-byte determinism flag raised during it is unexplained (see section 11).
 
 ## Configuration
@@ -284,11 +323,12 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 | `--budget N` / `squeze.tokenBudget` | Token budget, 256–32,000 (default 3,000) |
 | `RSQ_FEATURES` / `--features` / `squeze.features` | Comma list, e.g. `-prf,-priors`, `+frames,+git`, `none` (closest to 2.1.0 behaviour). Features: `compactfmt windows pointers priors prf phrase frames git redact condense` |
 | `RSQ_TOKENIZER=v1` | 2.1.0 tokenizer (for comparisons) |
-| `REPOSQUEEZE_CACHE_DIR` | Cache location (`repo` restores the old in-repo `.reposqueeze-v2/`) |
+| `REPOSQUEEZE_CACHE_DIR` | Cache location: a directory (each repository gets a subfolder); `off`, `none` or `memory` keeps the index in memory only; `repo` restores the old in-repo `.reposqueeze-v2/` |
 | `REPOSQUEEZE_REFRESH_INDEX=1` | Force re-reading files in repositories above 5,000 files |
 | `REPOSQUEEZE_EXACT_STATS=1` | Exact (slow) input-token statistic instead of the sampled estimate |
 | `REPOSQUEEZE_MAX_CANDIDATES` | Candidates parsed in large-repository mode (100–5,000) |
 | `--semantic-model all-minilm` | Optional local Ollama embeddings of the 300 strongest lexical candidates; sent to `127.0.0.1:11434` only |
+| `squeze.autoRefresh` (VS Code) | Index in the background when a trusted folder opens and refresh after file changes (on by default); off means indexing runs only when you use a Squeze command |
 | `.reposqueeze-v2ignore` | Extra ignore rules (gitignore syntax) |
 
 ## Security model
@@ -305,14 +345,20 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 - Above 5,000 files a file-level sketch chooses the candidates that get parsed. Index reuse trusts size, modification time, change time and inode. Change time cannot be set from user space, so a same-size edit is still caught when its modification time was restored. Files whose newest timestamp is within two seconds of the scan are always re-read, because a rewrite in the same timestamp tick can leave the stamps unchanged. Set `REPOSQUEEZE_REFRESH_INDEX=1` to force a full re-read.
 - Safety limits: 100,000 files, 2 GiB indexed text, 2 MiB per file, depth 60. Exceeding one is reported in the output.
 - Token counts use `o200k_base`; provider counts differ.
+- Public non-inferiority failure: against whole-repository reading, squeze loses 3.1 points of symbol-lookup recall on the public corpus, outside the 2.0-point margin (section 0 of Evidence).
+- Explorer: the top 600 files by rank are drawn by default (2,000 maximum); the summary then reads "showing top N files". Graphs built from a candidate subset are labelled "PARTIAL graph".
 - Windows: the CLI and extension are built for it, but some benchmark and chunker tests still assume `/` path separators, so the Windows CI job is informational.
 
 ## Reproduce
 
 ```sh
-npm ci && npm run check && npm test             # type-check and the full test suite
+npm ci && npm run check && npm test             # type-check and the 678-test suite
 npm run measure:overhead                         # section 3
 npm run bench:fetch && npm run bench:devsuite    # section 2 (runs the current checkout)
+npx playwright install chromium && npm run test:ui             # browser tests of the Explorer
+VSCODE_EXECUTABLE_PATH=/path/to/VSCode npm run test:editor    # VS Code extension-host tests
+npm run bench:proof                                           # section 0 (clones pinned public repositories; needs network)
+node --import tsx bench/proof/run.ts local /path/to/repo      # private repository; aggregate output only
 node --import tsx bench/run.ts --help            # section 1: SWE-bench harness (dev split only)
 node --import tsx scripts/repomap-eval.ts --help # section 4
 node --import tsx scripts/logs-eval.ts           # section 5
@@ -324,9 +370,10 @@ Earlier frozen evaluations of 2.0/2.1 (Agent Retrieval Bench `trace2code`, 50,00
 
 | Path | Contents |
 | --- | --- |
-| `src/` | `engine` (pipeline), `repository` + `store` + `search-index` (index), `parser` + `langs` + `chunkers` (chunking), `v2` (PCR ranking), `pack` (packing), `repomap` + `skeleton` + `symbols` (maps), `trace`, `gitsignals`, `redact`, `compact` + `logs/` (logs), `mcp`, `cli`, `extension` |
-| `tests/` | Unit, integration, MCP and adversarial tests |
-| `bench/`, `scripts/`, `benchmarks/` | Evaluation harnesses, scripts and raw results |
+| `src/` | `engine` (pipeline), `repository` + `store` + `search-index` (index), `parser` + `langs` + `chunkers` (chunking), `v2` (PCR ranking), `pack` (packing), `repomap` + `skeleton` + `symbols` (maps), `trace`, `gitsignals`, `redact`, `compact` + `logs/` (logs), `mcp`, `cli`, `extension`; Explorer and index: `explorer-html`, `explorer-model`, `graph-algos`, `graph-html`, `graph-layout`, `graph-render`, `graph-store`, `index-pool`, `index-worker`, `live-refresh`, `status-text`, `token-ledger` |
+| `tests/` | Unit, integration, MCP and adversarial tests; `tests/ui/` browser tests of the Explorer |
+| `media/` | Explorer stylesheet and script, loaded under a nonce CSP |
+| `bench/`, `scripts/`, `benchmarks/` | Evaluation harnesses, scripts and raw results; `bench/proof/` is the 3.0 proof harness (public corpus, and private repositories with aggregate output only) |
 | `docs/` | Architecture, research and evaluation reports |
 
 MIT licence. Third-party notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -1,11 +1,18 @@
 # Changelog
 
-## Unreleased
+## 3.0.0 — 2026-11-14
+
+### Evidence
+- Public corpus (9 pinned repositories, 40 cases each, seed 1729, budget 3,000 tokens): squeze recall 96.9% [95.0, 98.6] against grep 95.6% [93.3, 97.5]. The non-inferiority test at a 2.0-point margin **failed**: squeze loses 3.1 points [1.4, 5.0]. Express (12.5% loss), bat (7.5%) and flask, gin and django (2.5% each) account for the losses. The McNemar test is not significant (p = 0.42). Input tokens fall 87.3% against grep. Raw output: `bench/proof/results/public.md`.
+- One private repository, aggregate numbers only: squeze recall 100% against grep 95%, non-inferiority passed, input tokens fall 86.2%.
+- Per-call overhead of the MCP tool list (`npm run measure:overhead`): `--tools core` is 548 tokens for 4 tools, `--tools all` is 765 tokens for 6 tools.
 
 ### Added
 - VS Code **Code Explorer** (`Squeze: Open Code Explorer`): a searchable, interactive map of the code graph with subsystems, hubs and links. It renders under a per-render nonce CSP that blocks network requests, and shows at most 600 nodes by default (2,000 maximum). Incomplete graphs are labelled "partial graph".
 - `Squeze: Refresh Index` and the `squeze.autoRefresh` setting (on by default). The index follows file changes through a debounced, single-flight refresh.
 - `Squeze: Show Token Savings`: a local ledger of input tokens avoided by each pack, estimated as the whole-repository input minus the pack output. It records pack calls only and is not billing data.
+- Browser UI tests (`npm run test:ui`, Playwright at 1440, 768 and 360 px).
+- Proof harness `bench/proof/`: `npm run bench:proof` runs the public corpus; `local <path>` runs a private repository and writes aggregate output only.
 
 ### Changed
 - `Squeze: Show Code Graph` opens the Code Explorer. The HTML export (`squeze graph --html`) keeps its output: the layout code moved to a shared module, and output is byte-identical before and after on express, gin and requests.
