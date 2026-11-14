@@ -1,0 +1,937 @@
+{
+  "label": "public corpus (9 pinned repositories)",
+  "aggregateOnly": false,
+  "sample": 40,
+  "seed": 1729,
+  "margin": 0.02,
+  "pooled": {
+    "cases": 360,
+    "recall": {
+      "squeeze": {
+        "mean": 0.9694444444444444,
+        "lo": 0.95,
+        "hi": 0.9861111111111112
+      },
+      "grep": {
+        "mean": 0.9555555555555556,
+        "lo": 0.9333333333333333,
+        "hi": 0.975
+      },
+      "whole": {
+        "mean": 1,
+        "lo": 1,
+        "hi": 1
+      }
+    },
+    "nonInferiority": {
+      "meanA": 0.9694444444444444,
+      "meanB": 1,
+      "diff": 0.030555555555555555,
+      "lo": 0.013888888888888888,
+      "hi": 0.05,
+      "margin": 0.02,
+      "pass": false
+    },
+    "versusGrep": {
+      "squeezeOnly": 15,
+      "grepOnly": 10,
+      "bothHit": 334,
+      "bothMiss": 1,
+      "p": 0.42435622215270985
+    },
+    "tokens": {
+      "squeeze": 1073401,
+      "grep": 8439683,
+      "whole": 606575360
+    },
+    "reductionVersusGrep": {
+      "point": 0.8728150097580679,
+      "lo": 0.8482707062367411,
+      "hi": 0.8924517597994978
+    },
+    "reductionVersusWhole": {
+      "point": 0.9982303913564837,
+      "lo": 0.9978898328234214,
+      "hi": 0.9984858430201724
+    },
+    "medianCaseReductionVersusGrep": 0.6611618727478408,
+    "squeezeCheaperThanGrep": 280,
+    "latency": {
+      "p50Ms": 1443.452563000028,
+      "p90Ms": 4461.723270799966
+    },
+    "misses": [
+      {
+        "repo": "flask",
+        "name": "create",
+        "goldFiles": [
+          "examples/tutorial/flaskr/blog.py"
+        ],
+        "grepReached": false
+      },
+      {
+        "repo": "gin",
+        "name": "engine",
+        "goldFiles": [
+          "ginS/gins.go"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "express",
+        "name": "verbose",
+        "goldFiles": [
+          "examples/route-map/index.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "express",
+        "name": "methods",
+        "goldFiles": [
+          "lib/application.js",
+          "test/res.send.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "express",
+        "name": "dirname",
+        "goldFiles": [
+          "lib/view.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "express",
+        "name": "redirect",
+        "goldFiles": [
+          "examples/vhost/index.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "express",
+        "name": "fixtures",
+        "goldFiles": [
+          "test/express.static.js",
+          "test/res.sendFile.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "bat",
+        "name": "expect",
+        "goldFiles": [
+          "tests/syntax-tests/source/Zig/example.zig"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "bat",
+        "name": "assert",
+        "goldFiles": [
+          "tests/benchmarks/highlighting-speed-src/jquery.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "bat",
+        "name": "document",
+        "goldFiles": [
+          "tests/benchmarks/highlighting-speed-src/jquery.js"
+        ],
+        "grepReached": true
+      },
+      {
+        "repo": "django",
+        "name": "Entries",
+        "goldFiles": [
+          "tests/aggregation_regress/models.py"
+        ],
+        "grepReached": true
+      }
+    ]
+  },
+  "repositories": [
+    {
+      "repo": "flask",
+      "universe": {
+        "listed": 236,
+        "files": 229,
+        "excluded": {
+          "path-policy": 7
+        },
+        "tokens": 276807
+      },
+      "squeeze": {
+        "totalFiles": 229,
+        "indexMode": "full",
+        "coldIndexMs": 5696.255166999999
+      },
+      "availableCases": 137,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 0.975,
+            "lo": 0.925,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.925,
+            "lo": 0.825,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 0.975,
+          "meanB": 1,
+          "diff": 0.025,
+          "lo": 0,
+          "hi": 0.075,
+          "margin": 0.02,
+          "pass": false
+        },
+        "versusGrep": {
+          "squeezeOnly": 2,
+          "grepOnly": 0,
+          "bothHit": 37,
+          "bothMiss": 1,
+          "p": 0.5
+        },
+        "tokens": {
+          "squeeze": 119369,
+          "grep": 535887,
+          "whole": 11072280
+        },
+        "reductionVersusGrep": {
+          "point": 0.7772496813693932,
+          "lo": 0.6804941416382108,
+          "hi": 0.831880342064322
+        },
+        "reductionVersusWhole": {
+          "point": 0.9892191129559584,
+          "lo": 0.9892080041328435,
+          "hi": 0.9892327528747467
+        },
+        "medianCaseReductionVersusGrep": 0.6313086367304473,
+        "squeezeCheaperThanGrep": 35,
+        "latency": {
+          "p50Ms": 1465.3333330000005,
+          "p90Ms": 3107.3709332999983
+        },
+        "misses": [
+          {
+            "repo": "flask",
+            "name": "create",
+            "goldFiles": [
+              "examples/tutorial/flaskr/blog.py"
+            ],
+            "grepReached": false
+          }
+        ]
+      }
+    },
+    {
+      "repo": "requests",
+      "universe": {
+        "listed": 130,
+        "files": 115,
+        "excluded": {
+          "path-policy": 12,
+          "too-large": 1,
+          "not-regular": 2
+        },
+        "tokens": 722473
+      },
+      "squeeze": {
+        "totalFiles": 115,
+        "indexMode": "full",
+        "coldIndexMs": 2605.816709000006
+      },
+      "availableCases": 99,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 1,
+          "meanB": 1,
+          "diff": 0,
+          "lo": 0,
+          "hi": 0,
+          "margin": 0.02,
+          "pass": true
+        },
+        "versusGrep": {
+          "squeezeOnly": 0,
+          "grepOnly": 0,
+          "bothHit": 40,
+          "bothMiss": 0,
+          "p": 1
+        },
+        "tokens": {
+          "squeeze": 119229,
+          "grep": 932170,
+          "whole": 28898920
+        },
+        "reductionVersusGrep": {
+          "point": 0.8720952186832873,
+          "lo": 0.8325938559206164,
+          "hi": 0.8974895486961603
+        },
+        "reductionVersusWhole": {
+          "point": 0.9958742748863971,
+          "lo": 0.9958690151742695,
+          "hi": 0.9958805389613176
+        },
+        "medianCaseReductionVersusGrep": 0.8205880499892726,
+        "squeezeCheaperThanGrep": 35,
+        "latency": {
+          "p50Ms": 1449.130791500007,
+          "p90Ms": 2373.239783700001
+        },
+        "misses": []
+      }
+    },
+    {
+      "repo": "gin",
+      "universe": {
+        "listed": 130,
+        "files": 128,
+        "excluded": {
+          "path-policy": 2
+        },
+        "tokens": 250672
+      },
+      "squeeze": {
+        "totalFiles": 128,
+        "indexMode": "full",
+        "coldIndexMs": 3037.235584000009
+      },
+      "availableCases": 194,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 0.975,
+            "lo": 0.925,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 0.975,
+          "meanB": 1,
+          "diff": 0.025,
+          "lo": 0,
+          "hi": 0.075,
+          "margin": 0.02,
+          "pass": false
+        },
+        "versusGrep": {
+          "squeezeOnly": 0,
+          "grepOnly": 1,
+          "bothHit": 39,
+          "bothMiss": 0,
+          "p": 1
+        },
+        "tokens": {
+          "squeeze": 119198,
+          "grep": 441888,
+          "whole": 10026880
+        },
+        "reductionVersusGrep": {
+          "point": 0.7302529147657325,
+          "lo": 0.6073958381373409,
+          "hi": 0.797281128949385
+        },
+        "reductionVersusWhole": {
+          "point": 0.9881121545286271,
+          "lo": 0.9880943025148401,
+          "hi": 0.9881325995723496
+        },
+        "medianCaseReductionVersusGrep": 0.6009476140865353,
+        "squeezeCheaperThanGrep": 26,
+        "latency": {
+          "p50Ms": 1373.7643959999987,
+          "p90Ms": 2282.614241699991
+        },
+        "misses": [
+          {
+            "repo": "gin",
+            "name": "engine",
+            "goldFiles": [
+              "ginS/gins.go"
+            ],
+            "grepReached": true
+          }
+        ]
+      }
+    },
+    {
+      "repo": "ripgrep",
+      "universe": {
+        "listed": 226,
+        "files": 216,
+        "excluded": {
+          "path-policy": 3,
+          "not-regular": 1,
+          "binary": 6
+        },
+        "tokens": 902720
+      },
+      "squeeze": {
+        "totalFiles": 215,
+        "indexMode": "full",
+        "coldIndexMs": 6143.129167000006
+      },
+      "availableCases": 185,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.95,
+            "lo": 0.875,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 1,
+          "meanB": 1,
+          "diff": 0,
+          "lo": 0,
+          "hi": 0,
+          "margin": 0.02,
+          "pass": true
+        },
+        "versusGrep": {
+          "squeezeOnly": 2,
+          "grepOnly": 0,
+          "bothHit": 38,
+          "bothMiss": 0,
+          "p": 0.5
+        },
+        "tokens": {
+          "squeeze": 119401,
+          "grep": 1120208,
+          "whole": 36108800
+        },
+        "reductionVersusGrep": {
+          "point": 0.8934117592447117,
+          "lo": 0.8412785133619446,
+          "hi": 0.9217637908642207
+        },
+        "reductionVersusWhole": {
+          "point": 0.9966932991403757,
+          "lo": 0.9966905020382842,
+          "hi": 0.9966964562655087
+        },
+        "medianCaseReductionVersusGrep": 0.7219055109271988,
+        "squeezeCheaperThanGrep": 33,
+        "latency": {
+          "p50Ms": 1421.4294999999984,
+          "p90Ms": 2325.850241600009
+        },
+        "misses": []
+      }
+    },
+    {
+      "repo": "express",
+      "universe": {
+        "listed": 216,
+        "files": 215,
+        "excluded": {
+          "path-policy": 1
+        },
+        "tokens": 194322
+      },
+      "squeeze": {
+        "totalFiles": 215,
+        "indexMode": "full",
+        "coldIndexMs": 5302.727874999982
+      },
+      "availableCases": 44,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 0.875,
+            "lo": 0.775,
+            "hi": 0.975
+          },
+          "grep": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 0.875,
+          "meanB": 1,
+          "diff": 0.125,
+          "lo": 0.025,
+          "hi": 0.225,
+          "margin": 0.02,
+          "pass": false
+        },
+        "versusGrep": {
+          "squeezeOnly": 0,
+          "grepOnly": 5,
+          "bothHit": 35,
+          "bothMiss": 0,
+          "p": 0.0625
+        },
+        "tokens": {
+          "squeeze": 118911,
+          "grep": 740295,
+          "whole": 7772880
+        },
+        "reductionVersusGrep": {
+          "point": 0.8393734929994123,
+          "lo": 0.7558738231374055,
+          "hi": 0.8824175368894019
+        },
+        "reductionVersusWhole": {
+          "point": 0.9847018093679563,
+          "lo": 0.9846787773643746,
+          "hi": 0.9847263819845411
+        },
+        "medianCaseReductionVersusGrep": 0.5552636089563362,
+        "squeezeCheaperThanGrep": 28,
+        "latency": {
+          "p50Ms": 1321.9932290000143,
+          "p90Ms": 2245.1980746999966
+        },
+        "misses": [
+          {
+            "repo": "express",
+            "name": "verbose",
+            "goldFiles": [
+              "examples/route-map/index.js"
+            ],
+            "grepReached": true
+          },
+          {
+            "repo": "express",
+            "name": "methods",
+            "goldFiles": [
+              "lib/application.js",
+              "test/res.send.js"
+            ],
+            "grepReached": true
+          },
+          {
+            "repo": "express",
+            "name": "dirname",
+            "goldFiles": [
+              "lib/view.js"
+            ],
+            "grepReached": true
+          },
+          {
+            "repo": "express",
+            "name": "redirect",
+            "goldFiles": [
+              "examples/vhost/index.js"
+            ],
+            "grepReached": true
+          },
+          {
+            "repo": "express",
+            "name": "fixtures",
+            "goldFiles": [
+              "test/express.static.js",
+              "test/res.sendFile.js"
+            ],
+            "grepReached": true
+          }
+        ]
+      }
+    },
+    {
+      "repo": "gson",
+      "universe": {
+        "listed": 315,
+        "files": 314,
+        "excluded": {
+          "path-policy": 1
+        },
+        "tokens": 540170
+      },
+      "squeeze": {
+        "totalFiles": 314,
+        "indexMode": "full",
+        "coldIndexMs": 5220.300999999978
+      },
+      "availableCases": 144,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.9,
+            "lo": 0.8,
+            "hi": 0.975
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 1,
+          "meanB": 1,
+          "diff": 0,
+          "lo": 0,
+          "hi": 0,
+          "margin": 0.02,
+          "pass": true
+        },
+        "versusGrep": {
+          "squeezeOnly": 4,
+          "grepOnly": 0,
+          "bothHit": 36,
+          "bothMiss": 0,
+          "p": 0.125
+        },
+        "tokens": {
+          "squeeze": 119399,
+          "grep": 834914,
+          "whole": 21606800
+        },
+        "reductionVersusGrep": {
+          "point": 0.8569924567081161,
+          "lo": 0.7995456962474325,
+          "hi": 0.8912163275861028
+        },
+        "reductionVersusWhole": {
+          "point": 0.9944740081826092,
+          "lo": 0.9944691486013663,
+          "hi": 0.9944801173704575
+        },
+        "medianCaseReductionVersusGrep": 0.7188149359047915,
+        "squeezeCheaperThanGrep": 31,
+        "latency": {
+          "p50Ms": 1623.1267710000102,
+          "p90Ms": 3110.0833416999903
+        },
+        "misses": []
+      }
+    },
+    {
+      "repo": "bat",
+      "universe": {
+        "listed": 1014,
+        "files": 899,
+        "excluded": {
+          "path-policy": 8,
+          "binary": 13,
+          "not-regular": 94
+        },
+        "tokens": 2794409
+      },
+      "squeeze": {
+        "totalFiles": 899,
+        "indexMode": "full",
+        "coldIndexMs": 13389.21666700003
+      },
+      "availableCases": 142,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 0.925,
+            "lo": 0.825,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.95,
+            "lo": 0.875,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 0.925,
+          "meanB": 1,
+          "diff": 0.075,
+          "lo": 0,
+          "hi": 0.175,
+          "margin": 0.02,
+          "pass": false
+        },
+        "versusGrep": {
+          "squeezeOnly": 2,
+          "grepOnly": 3,
+          "bothHit": 35,
+          "bothMiss": 0,
+          "p": 1
+        },
+        "tokens": {
+          "squeeze": 119268,
+          "grep": 2069973,
+          "whole": 111776360
+        },
+        "reductionVersusGrep": {
+          "point": 0.9423818571546585,
+          "lo": 0.8782844466877251,
+          "hi": 0.9643719958829705
+        },
+        "reductionVersusWhole": {
+          "point": 0.9989329765256267,
+          "lo": 0.9989316256138596,
+          "hi": 0.9989344974196691
+        },
+        "medianCaseReductionVersusGrep": 0.5483779972176597,
+        "squeezeCheaperThanGrep": 31,
+        "latency": {
+          "p50Ms": 1321.499375000043,
+          "p90Ms": 2323.2893127999273
+        },
+        "misses": [
+          {
+            "repo": "bat",
+            "name": "expect",
+            "goldFiles": [
+              "tests/syntax-tests/source/Zig/example.zig"
+            ],
+            "grepReached": true
+          },
+          {
+            "repo": "bat",
+            "name": "assert",
+            "goldFiles": [
+              "tests/benchmarks/highlighting-speed-src/jquery.js"
+            ],
+            "grepReached": true
+          },
+          {
+            "repo": "bat",
+            "name": "document",
+            "goldFiles": [
+              "tests/benchmarks/highlighting-speed-src/jquery.js"
+            ],
+            "grepReached": true
+          }
+        ]
+      }
+    },
+    {
+      "repo": "preact",
+      "universe": {
+        "listed": 310,
+        "files": 308,
+        "excluded": {
+          "not-regular": 1,
+          "path-policy": 1
+        },
+        "tokens": 446135
+      },
+      "squeeze": {
+        "totalFiles": 308,
+        "indexMode": "full",
+        "coldIndexMs": 1314.4628340000054
+      },
+      "availableCases": 403,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.975,
+            "lo": 0.925,
+            "hi": 1
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 1,
+          "meanB": 1,
+          "diff": 0,
+          "lo": 0,
+          "hi": 0,
+          "margin": 0.02,
+          "pass": true
+        },
+        "versusGrep": {
+          "squeezeOnly": 1,
+          "grepOnly": 0,
+          "bothHit": 39,
+          "bothMiss": 0,
+          "p": 1
+        },
+        "tokens": {
+          "squeeze": 119213,
+          "grep": 673252,
+          "whole": 17845400
+        },
+        "reductionVersusGrep": {
+          "point": 0.8229296013973966,
+          "lo": 0.7457065781201441,
+          "hi": 0.8678044460004649
+        },
+        "reductionVersusWhole": {
+          "point": 0.9933196790209241,
+          "lo": 0.9933095363511045,
+          "hi": 0.9933313907225392
+        },
+        "medianCaseReductionVersusGrep": 0.6868023903137749,
+        "squeezeCheaperThanGrep": 29,
+        "latency": {
+          "p50Ms": 437.58227100002114,
+          "p90Ms": 815.1834457999912
+        },
+        "misses": []
+      }
+    },
+    {
+      "repo": "django",
+      "universe": {
+        "listed": 7102,
+        "files": 5644,
+        "excluded": {
+          "path-policy": 136,
+          "binary": 1321,
+          "tracked-but-ignored": 1
+        },
+        "tokens": 9036676
+      },
+      "squeeze": {
+        "totalFiles": 5644,
+        "indexMode": "cascade",
+        "coldIndexMs": 6194.233833999955
+      },
+      "availableCases": 3908,
+      "summary": {
+        "cases": 40,
+        "recall": {
+          "squeeze": {
+            "mean": 0.975,
+            "lo": 0.925,
+            "hi": 1
+          },
+          "grep": {
+            "mean": 0.9,
+            "lo": 0.8,
+            "hi": 0.975
+          },
+          "whole": {
+            "mean": 1,
+            "lo": 1,
+            "hi": 1
+          }
+        },
+        "nonInferiority": {
+          "meanA": 0.975,
+          "meanB": 1,
+          "diff": 0.025,
+          "lo": 0,
+          "hi": 0.075,
+          "margin": 0.02,
+          "pass": false
+        },
+        "versusGrep": {
+          "squeezeOnly": 4,
+          "grepOnly": 1,
+          "bothHit": 35,
+          "bothMiss": 0,
+          "p": 0.37500000000000006
+        },
+        "tokens": {
+          "squeeze": 119413,
+          "grep": 1091096,
+          "whole": 361467040
+        },
+        "reductionVersusGrep": {
+          "point": 0.8905568345956726,
+          "lo": 0.824793402326952,
+          "hi": 0.9221573758972809
+        },
+        "reductionVersusWhole": {
+          "point": 0.9996696434618216,
+          "lo": 0.9996693806439447,
+          "hi": 0.9996699560767698
+        },
+        "medianCaseReductionVersusGrep": 0.7112072991627267,
+        "squeezeCheaperThanGrep": 32,
+        "latency": {
+          "p50Ms": 5404.857479500002,
+          "p90Ms": 8489.079704499944
+        },
+        "misses": [
+          {
+            "repo": "django",
+            "name": "Entries",
+            "goldFiles": [
+              "tests/aggregation_regress/models.py"
+            ],
+            "grepReached": true
+          }
+        ]
+      }
+    }
+  ]
+}
