@@ -1,4 +1,5 @@
 {
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.2002-rokkam/squeze",
   "description": "Local, deterministic, token-budgeted code context for Copilot and MCP coding agents.",
   "repository": {
