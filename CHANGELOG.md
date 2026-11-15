@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.2 — 2026-11-15
+
+### Changed
+- The README has a keyword-bearing title and lead, plus a new FAQ (`#faq`) covering token-budgeted context, GitHub Copilot use, where code is sent (nowhere), supported languages, and what the benchmark does not measure. The Contents list is renumbered.
+- npm metadata: `description` shortened to name the GitHub Copilot and MCP coding-agent use, and keywords expanded (`codebase-context`, `code-retrieval`, `repo-map`, `context-window`, `token-budget`, `coding-agent`, `developer-tools`, `cli`). No behaviour changes; the version constant in `src/mcp.ts` moves with the release.
+
 ## 3.0.1 — 2026-11-15
 
 ### Changed

@@ -1,8 +1,8 @@
-# Squeze
+# Squeze: token-budgeted code context for coding agents
 
 **Give your coding agent the right code, not the whole repository.**
 
-Squeze is a local, deterministic context engine for coding agents. Give it a task, an error or a stack trace; it returns the few verbatim, line-cited source excerpts that matter, inside a token budget you choose. It runs as a CLI, an MCP server for any MCP-capable agent, and a VS Code / GitHub Copilot extension. No model calls, no network, no telemetry.
+Squeze is a local, deterministic context engine and repository map for coding agents, including GitHub Copilot and any MCP-capable agent. Give it a task, an error or a stack trace; it returns the few verbatim, line-cited source excerpts that matter, inside a token budget you choose. It runs as a CLI, an MCP server for any MCP-capable agent, and a VS Code / GitHub Copilot extension. No model calls and no telemetry; the only network call is an optional local Ollama server for embeddings.
 
 [![npm](https://img.shields.io/npm/v/squeze-cli)](https://www.npmjs.com/package/squeze-cli) [![downloads](https://img.shields.io/npm/dm/squeze-cli)](https://www.npmjs.com/package/squeze-cli) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green)
 
@@ -35,7 +35,7 @@ Public proof on 9 pinned open-source repositories, 360 symbol-lookup cases. Meth
 
 ## Contents
 
-1. [Why](#why) · 2. [Install](#install) · 3. [Use](#use) · 4. [How it works](#how-it-works) · 5. [What is new in 3.0](#what-is-new-in-30) · 6. [What is new in 2.2](#what-is-new-in-22) · 7. [Evidence](#evidence) · 8. [Configuration](#configuration) · 9. [Security model](#security-model) · 10. [Limitations](#limitations) · 11. [Reproduce](#reproduce) · 12. [Repository map](#repository-map)
+1. [Why](#why) · 2. [FAQ](#faq) · 3. [Install](#install) · 4. [Use](#use) · 5. [How it works](#how-it-works) · 6. [What is new in 3.0](#what-is-new-in-30) · 7. [What is new in 2.2](#what-is-new-in-22) · 8. [Evidence](#evidence) · 9. [Configuration](#configuration) · 10. [Security model](#security-model) · 11. [Limitations](#limitations) · 12. [Reproduce](#reproduce) · 13. [Repository map](#repository-map)
 
 ## Why
 
@@ -45,6 +45,28 @@ An agent that reads whole files to answer "where is retry backoff computed?" pay
 - **Budgeted.** The final text, including headings, never exceeds the requested `o200k_base` token budget (256–32,000).
 - **Deterministic.** The same repository state and query give byte-identical output.
 - **Local.** The only optional network call is to an Ollama server on `127.0.0.1` if you enable embeddings.
+
+## FAQ
+
+### How do I give a coding agent the right code without pasting the whole repository?
+
+Ask for the task, error or stack trace inside a token budget, for example `squeze context --root . --query "where is retry backoff computed?" --budget 3000`. Squeze returns the few verbatim, line-cited excerpts that match. MCP agents use the same engine through the [MCP server](#mcp).
+
+### How do I use Squeze with GitHub Copilot?
+
+Build the VSIX from this repository with `npm run package`, then install it with `code --install-extension releases/squeze-cli-3.0.2.vsix` (see [VS Code](#vs-code)). Then enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt.
+
+### Does Squeze send my code to a model or a server?
+
+No. Squeze makes no model calls and collects no telemetry. Its only network call is optional: with `--semantic-model`, it talks to an Ollama server on `127.0.0.1` on your own machine.
+
+### Which languages does Squeze support?
+
+20 tree-sitter grammars: C, C++, C#, Go, Java, JavaScript, Python, Ruby, Rust, TypeScript and TSX, plus PHP, Kotlin, Scala, Bash, Elixir, OCaml, Objective-C, Solidity and Zig. Markdown, JSON, YAML, TOML, XML, HTML, CSS, SQL, Dockerfile, Makefile, protobuf and HCL have structural chunkers.
+
+### Does a smaller context make the answers better?
+
+Not measured. The public tests measure retrieval: 87.3% fewer input tokens than a grep-and-read baseline across 360 symbol-lookup cases, and recall of 96.9% against grep's 95.6% (not statistically different). Answer quality, output tokens and billing are not measured. See [Evidence](#evidence).
 
 ## Install
 
@@ -71,8 +93,8 @@ The older `reposqueeze-v2` command name still works as an alias. Tool names chan
 ### VS Code
 
 ```sh
-npm run package                                  # writes releases/squeze-cli-3.0.1.vsix
-code --install-extension releases/squeze-cli-3.0.1.vsix
+npm run package                                  # writes releases/squeze-cli-3.0.2.vsix
+code --install-extension releases/squeze-cli-3.0.2.vsix
 ```
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
@@ -326,7 +348,7 @@ The 2.1.0 profile on the 921-file repo: tokenizing the whole repository only to 
 
 ### 11. Tests and robustness
 
-`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.1 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
+`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.2 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
 
 A many-repository robustness and adversarial suite is in [bench/robustness](bench/robustness). Only a partial run was completed on the final build: 2 repositories (gin, requests), 32 commands, 0 crashes, 0 timeouts, 0 budget violations, 0 secret-regex hits in outputs ([report](benchmarks/v3/robustness-final.md)). That run flagged 4 of 8 repeat comparisons as non-identical while the machine load was about 50; serial re-runs of `map` on the same checkout were byte-identical 3 of 3 times and `context` cold and warm were identical on a second checkout, so the cause was not identified. The adversarial section did not finish and is **not** claimed.
 
