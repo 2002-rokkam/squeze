@@ -1,9 +1,35 @@
 # Squeze
 
-**Local, deterministic, token-budgeted repository context for coding agents.**
-Give it a task, an error or a stack trace; it returns the few verbatim, line-cited source excerpts that matter, inside a token budget you choose. It runs as a CLI, an MCP server and a VS Code / GitHub Copilot tool. No model calls, no network, no telemetry.
+**Give your coding agent the right code, not the whole repository.**
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green) ![version](https://img.shields.io/badge/version-3.0.0-informational)
+Squeze is a local, deterministic context engine for coding agents. Give it a task, an error or a stack trace; it returns the few verbatim, line-cited source excerpts that matter, inside a token budget you choose. It runs as a CLI, an MCP server for any MCP-capable agent, and a VS Code / GitHub Copilot extension. No model calls, no network, no telemetry.
+
+[![npm](https://img.shields.io/npm/v/squeze-cli)](https://www.npmjs.com/package/squeze-cli) [![downloads](https://img.shields.io/npm/dm/squeze-cli)](https://www.npmjs.com/package/squeze-cli) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![node](https://img.shields.io/badge/node-%E2%89%A520.19-green)
+
+## Quick start
+
+```sh
+npm install -g squeze-cli
+squeze context --root . --query "where is retry backoff computed?" --budget 3000
+squeze map --root .
+```
+
+Then connect it to your agent: [MCP setup](#mcp) or the [VS Code extension](#vs-code).
+
+## Results at a glance
+
+Public proof on 9 pinned open-source repositories, 360 symbol-lookup cases. Method, losses and confidence intervals are in [Evidence](#evidence).
+
+| Metric | Result |
+| --- | --- |
+| Input tokens vs. a grep-and-read baseline | 87.3% fewer [84.8%, 89.2%] |
+| Input tokens vs. reading the whole repository | 99.8% fewer |
+| Recall (finds the defining file): squeze / grep / whole repository | 96.9% / 95.6% / 100% (ceiling) |
+| Squeze vs. grep recall | not significantly different (McNemar p = 0.42) |
+| Squeze vs. whole-repository recall | 3.1-point loss; the non-inferiority test at a 2-point margin **failed** |
+
+**Good fit:** large repositories where an agent would otherwise read thousands of irrelevant lines, and repeated queries in the same session.
+**Not measured:** output tokens, model answer quality and billing. No model is called in these tests.
 
 > **Status of the evidence.** Every public number in this document comes from a script in this repository and a raw result file you can inspect. The one private-repository result in section 0 of [Evidence](#evidence) is aggregate only and cannot be reproduced from this repository. For 3.0, the public non-inferiority test against whole-repository reading **failed**; section 0 gives the numbers. Section [Evidence](#evidence) lists what was measured, how, the confidence intervals and what was **not** proven. Nothing here claims 100% accuracy, answer quality or billing savings.
 
@@ -45,8 +71,8 @@ The older `reposqueeze-v2` command name still works as an alias. Tool names chan
 ### VS Code
 
 ```sh
-npm run package                                  # writes releases/squeze-cli-3.0.0.vsix
-code --install-extension releases/squeze-cli-3.0.0.vsix
+npm run package                                  # writes releases/squeze-cli-3.0.1.vsix
+code --install-extension releases/squeze-cli-3.0.1.vsix
 ```
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
@@ -300,7 +326,7 @@ The 2.1.0 profile on the 921-file repo: tokenizing the whole repository only to 
 
 ### 11. Tests and robustness
 
-`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.0 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
+`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.1 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
 
 A many-repository robustness and adversarial suite is in [bench/robustness](bench/robustness). Only a partial run was completed on the final build: 2 repositories (gin, requests), 32 commands, 0 crashes, 0 timeouts, 0 budget violations, 0 secret-regex hits in outputs ([report](benchmarks/v3/robustness-final.md)). That run flagged 4 of 8 repeat comparisons as non-identical while the machine load was about 50; serial re-runs of `map` on the same checkout were byte-identical 3 of 3 times and `context` cold and warm were identical on a second checkout, so the cause was not identified. The adversarial section did not finish and is **not** claimed.
 

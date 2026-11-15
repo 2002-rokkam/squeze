@@ -16,7 +16,7 @@ export interface ServeOptions {
   features?: string;
 }
 
-export const VERSION = '3.0.0';
+export const VERSION = '3.0.1';
 
 export async function serve(root: string, options: ServeOptions | string = {}) {
   const { semanticModel, tools = 'core', features } = typeof options === 'string' ? { semanticModel: options } : options;

@@ -1,0 +1,19 @@
+{
+  "name": "io.github.2002-rokkam/squeze",
+  "description": "Local, deterministic, token-budgeted code context for Copilot and MCP coding agents.",
+  "repository": {
+    "url": "https://github.com/2002-rokkam/squeze",
+    "source": "github"
+  },
+  "version": "3.0.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "squeze-cli",
+      "version": "3.0.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

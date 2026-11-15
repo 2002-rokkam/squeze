@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1 — 2026-11-15
+
+### Changed
+- The README opens as a landing page: install and quick start, measured results with confidence intervals (including the failed non-inferiority test), a good-fit note and a not-measured note. The evidence sections are unchanged.
+- npm metadata: keywords expanded, `mcpName` set to `io.github.2002-rokkam/squeze` for the MCP Registry, and `server.json` added. No code changes.
+
 ## 3.0.0 — 2026-11-14
 
 ### Evidence

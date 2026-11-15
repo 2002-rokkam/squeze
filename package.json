@@ -1,8 +1,9 @@
 {
   "name": "squeze-cli",
+  "mcpName": "io.github.2002-rokkam/squeze",
   "displayName": "Squeze",
   "description": "Local, deterministic, token-budgeted code context and code graph for Copilot and MCP coding agents. Cuts the tokens (credits) an agent spends reading a repository.",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "publisher": "2002-rokkam",
   "license": "MIT",
   "type": "module",
@@ -38,7 +39,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "bench": "node --import tsx scripts/benchmark.ts",
     "bench:fetch": "node scripts/fetch-bench.mjs",
-    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-cli-3.0.0.vsix",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-cli-3.0.1.vsix",
     "prepare": "npm run build",
     "test:editor": "node scripts/test-extension.mjs",
     "test:ui": "node --import tsx --test tests/ui/*.test.ts",
@@ -289,15 +290,22 @@
   },
   "keywords": [
     "copilot",
+    "github-copilot",
     "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "vscode-extension",
     "context",
+    "context-engineering",
     "code-search",
     "code-graph",
+    "repository-map",
     "tokens",
+    "token-optimization",
     "llm",
     "agents",
-    "tree-sitter",
-    "repository-map"
+    "ai-coding-agent",
+    "tree-sitter"
   ],
   "publishConfig": {
     "access": "public"
