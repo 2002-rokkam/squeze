@@ -54,7 +54,7 @@ Ask for the task, error or stack trace inside a token budget, for example `squez
 
 ### How do I use Squeze with GitHub Copilot?
 
-Build the VSIX from this repository with `npm run package`, then install it with `code --install-extension releases/squeze-cli-3.0.2.vsix` (see [VS Code](#vs-code)). Then enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt.
+Install **Squeze** from the VS Code Marketplace with `code --install-extension 2002-rokkam.squeze-cli` (see [VS Code](#vs-code)). Then enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt.
 
 ### Does Squeze send my code to a model or a server?
 
@@ -92,10 +92,13 @@ The older `reposqueeze-v2` command name still works as an alias. Tool names chan
 
 ### VS Code
 
+Search **Squeze** in the Extensions view, or install from the terminal:
+
 ```sh
-npm run package                                  # writes releases/squeze-cli-3.0.2.vsix
-code --install-extension releases/squeze-cli-3.0.2.vsix
+code --install-extension 2002-rokkam.squeze-cli  # VS Code Marketplace
 ```
+
+The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.0.2.vsix`) and install that file with `code --install-extension`.
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
 
