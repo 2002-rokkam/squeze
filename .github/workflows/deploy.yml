@@ -7,12 +7,18 @@ name: Deploy
 #
 # One-time setup (repository Settings → Secrets and variables → Actions):
 #   NPM_TOKEN   npm "Automation" or granular access token with publish rights for `squeze`
-#   VSCE_PAT    (optional) Visual Studio Marketplace token; when absent the VS Code Marketplace step is skipped
 #   OVSX_PAT    (optional) Open VSX token; when absent the Open VSX step is skipped
+# The VS Code Marketplace uses Trusted Publishing (OIDC), so it needs no secret. The publisher must trust this repo and workflow.
+# To publish the Marketplace listing for a version already on npm: Actions → Deploy → Run workflow → publish_marketplace.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_marketplace:
+        description: Publish the current version to the VS Code Marketplace even if it is already on npm
+        type: boolean
+        default: false
 
 permissions:
   contents: write # GitHub release with the .vsix and .tgz
@@ -59,10 +65,9 @@ jobs:
 
   publish:
     needs: verify
-    if: needs.verify.outputs.published == 'false' && needs.verify.outputs.has_token == 'true'
+    if: needs.verify.outputs.has_token == 'true' && (needs.verify.outputs.published == 'false' || inputs.publish_marketplace)
     runs-on: ubuntu-latest
     env:
-      VSCE_PAT: ${{ secrets.VSCE_PAT }}
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - uses: actions/checkout@v4
@@ -78,6 +83,7 @@ jobs:
       - name: Pack the npm tarball
         run: npm pack --pack-destination releases
       - name: Stage the package on npm
+        if: needs.verify.outputs.published == 'false'
         # The npm account uses staged publishing: this uploads the version, and a maintainer approves it with 2FA
         # (npmjs.com -> package -> Staged Packages, or `npm stage approve <id>`). Staging needs npm >= 11.15.
         run: |
@@ -86,12 +92,13 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish to the Visual Studio Marketplace
-        if: env.VSCE_PAT != ''
-        run: npx vsce publish --no-dependencies --packagePath releases/squeze-cli-${{ needs.verify.outputs.version }}.vsix
+        # Trusted Publishing: GitHub's OIDC token is exchanged for a short-lived Marketplace token, so no secret is stored.
+        run: npx @vscode/vsce publish --oidc --no-dependencies --packagePath releases/squeze-cli-${{ needs.verify.outputs.version }}.vsix
       - name: Publish to Open VSX
-        if: env.OVSX_PAT != ''
+        if: needs.verify.outputs.published == 'false' && env.OVSX_PAT != ''
         run: npx ovsx publish releases/squeze-cli-${{ needs.verify.outputs.version }}.vsix -p "$OVSX_PAT"
       - name: GitHub release
+        if: needs.verify.outputs.published == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.verify.outputs.version }}
