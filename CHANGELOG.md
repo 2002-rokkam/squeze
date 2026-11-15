@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.3 — 2026-11-15
+
+### Added
+- An extension icon (`media/icon.png`, 256×256 PNG), referenced by the manifest `icon` field. It shows on the VS Code Marketplace listing and in the Extensions view. The npm and MCP behaviour is unchanged; the version constant in `src/mcp.ts` and `server.json` moves with the release.
+
 ## 3.0.2 — 2026-11-15
 
 ### Changed

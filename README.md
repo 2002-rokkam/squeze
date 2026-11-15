@@ -98,7 +98,7 @@ Search **Squeze** in the Extensions view, or install from the terminal:
 code --install-extension 2002-rokkam.squeze-cli  # VS Code Marketplace
 ```
 
-The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.0.2.vsix`) and install that file with `code --install-extension`.
+The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.0.3.vsix`) and install that file with `code --install-extension`.
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
 
@@ -351,7 +351,7 @@ The 2.1.0 profile on the 921-file repo: tokenizing the whole repository only to 
 
 ### 11. Tests and robustness
 
-`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.2 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
+`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.3 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
 
 A many-repository robustness and adversarial suite is in [bench/robustness](bench/robustness). Only a partial run was completed on the final build: 2 repositories (gin, requests), 32 commands, 0 crashes, 0 timeouts, 0 budget violations, 0 secret-regex hits in outputs ([report](benchmarks/v3/robustness-final.md)). That run flagged 4 of 8 repeat comparisons as non-identical while the machine load was about 50; serial re-runs of `map` on the same checkout were byte-identical 3 of 3 times and `context` cold and warm were identical on a second checkout, so the cause was not identified. The adversarial section did not finish and is **not** claimed.
 
