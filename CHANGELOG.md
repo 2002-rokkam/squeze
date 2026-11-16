@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.0 — 2026-11-16
 
 ### Added
 - `squeze.explorer.ignore` (VS Code, resource-scoped, default `[]`): gitignore-style patterns for files to hide from the Code Explorer. Hidden files are removed before the node limit applies, so they do not use its slots. They stay indexed, so packs and MCP results are unchanged. Up to 200 patterns of at most 500 characters; invalid entries are skipped.

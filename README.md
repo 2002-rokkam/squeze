@@ -98,7 +98,7 @@ Search **Squeze** in the Extensions view, or install from the terminal:
 code --install-extension 2002-rokkam.squeze-cli  # VS Code Marketplace
 ```
 
-The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.0.3.vsix`) and install that file with `code --install-extension`.
+The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.1.0.vsix`) and install that file with `code --install-extension`.
 
 Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
 
@@ -191,7 +191,7 @@ Details and rationale: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). A source-ve
 | Reuse safety | Index reuse also checks change time and inode. Files whose newest timestamp is within 2 s of the scan are always re-read. Cache format 2: older caches are discarded once |
 | Graph command | `Squeze: Show Code Graph` now opens the Code Explorer. The `squeze graph --html` export draws the top 2,000 files by default (it drew 400 in 3.0.x); repositories of 400 files or fewer produce the same output as before |
 | Fixes | A nested `.gitignore` that re-includes a file is honoured (checked against `git ls-files`); the MCP server reported 2.2.0 while the package was 2.2.1; a file changed between indexing and loading no longer fails `context` (the pack is rebuilt, at most three attempts); test scratch repositories moved out of the repository root |
-| Tests | `npm test` (678 tests); `npm run test:ui` (9 browser tests of the Explorer at 1440, 768 and 360 px; run `npx playwright install chromium` first); `npm run test:editor` (VS Code extension host; set `VSCODE_EXECUTABLE_PATH` to a VS Code binary) |
+| Tests | `npm test` (687 tests); `npm run test:ui` (9 browser tests of the Explorer at 1440, 768 and 360 px; run `npx playwright install chromium` first); `npm run test:editor` (VS Code extension host; set `VSCODE_EXECUTABLE_PATH` to a VS Code binary) |
 | Proof | `npm run bench:proof` (public corpus at pinned commits; needs network); `node --import tsx bench/proof/run.ts local <path>` (private repository; aggregate output only) |
 
 Behaviour changes to know about: `Squeze: Show Code Graph` opens the Explorer, and the cache format moved to version 2 (older caches are discarded once).
@@ -351,7 +351,7 @@ The 2.1.0 profile on the 921-file repo: tokenizing the whole repository only to 
 
 ### 11. Tests and robustness
 
-`npm test` runs 678 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 678 pass on the 3.0.3 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
+`npm test` runs 687 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 687 pass on the 3.1.0 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
 
 A many-repository robustness and adversarial suite is in [bench/robustness](bench/robustness). Only a partial run was completed on the final build: 2 repositories (gin, requests), 32 commands, 0 crashes, 0 timeouts, 0 budget violations, 0 secret-regex hits in outputs ([report](benchmarks/v3/robustness-final.md)). That run flagged 4 of 8 repeat comparisons as non-identical while the machine load was about 50; serial re-runs of `map` on the same checkout were byte-identical 3 of 3 times and `context` cold and warm were identical on a second checkout, so the cause was not identified. The adversarial section did not finish and is **not** claimed.
 
@@ -404,7 +404,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 ## Reproduce
 
 ```sh
-npm ci && npm run check && npm test             # type-check and the 678-test suite
+npm ci && npm run check && npm test             # type-check and the 687-test suite
 npm run measure:overhead                         # section 3
 npm run bench:fetch && npm run bench:devsuite    # section 2 (runs the current checkout)
 npx playwright install chromium && npm run test:ui             # browser tests of the Explorer
