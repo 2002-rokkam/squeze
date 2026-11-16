@@ -7,7 +7,7 @@ import { parseSource, hash, languageFor } from '../src/parser.js';
 import { buildGraph, graphFromSketch, CodeGraph, GRAPH_VERSION, type GraphSketch } from '../src/graph.js';
 import { buildCsr, louvain, shortestPath, stronglyConnected, undirectedCsr } from '../src/graph-algos.js';
 import { findPath, renderImpact, renderJson, renderMermaid, renderNeighbors, renderOverview, renderPath, validateMermaid, mermaidLabel } from '../src/graph-render.js';
-import { renderHtml } from '../src/graph-html.js';
+import { renderHtml, MAX_HTML_NODES } from '../src/graph-html.js';
 import { loadGraph, runGraph } from '../src/graph-store.js';
 import { Repository } from '../src/repository.js';
 import { tokens } from '../src/tokens.js';
@@ -311,6 +311,20 @@ test('HTML view is self-contained: no remote URLs, strict CSP, hashed inline scr
   assert.equal(html, renderHtml(graph, { title: 'Test <graph> & "co"' }), 'layout is deterministic');
   const hashes = [...csp.matchAll(/'sha256-([^']+)'/g)].map(match => match[1]);
   assert.equal(hashes.length, 2);
+});
+
+test('HTML view draws every file up to the 2,000-file cap and says when it has cut some', () => {
+  const circles = (html: string) => (html.match(/<circle /g) ?? []).length;
+  const small = renderHtml(syntheticGraph(400));
+  assert.equal(circles(small), 400);
+  assert.doesNotMatch(small, /showing top/);
+  const big = syntheticGraph(2500, 3);
+  const html = renderHtml(big);
+  assert.equal(MAX_HTML_NODES, 2000);
+  assert.equal(circles(html), MAX_HTML_NODES);
+  assert.match(html, /showing top 2000 files/);
+  assert.equal(circles(renderHtml(big, { maxNodes: 100 })), 100);
+  assert.equal(circles(renderHtml(big, { maxNodes: 1e9 })), MAX_HTML_NODES);
 });
 
 test('JSON export is versioned, parseable and budget-limited', () => {

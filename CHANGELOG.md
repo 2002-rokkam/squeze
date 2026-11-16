@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `squeze.explorer.ignore` (VS Code, resource-scoped, default `[]`): gitignore-style patterns for files to hide from the Code Explorer. Hidden files are removed before the node limit applies, so they do not use its slots. They stay indexed, so packs and MCP results are unchanged. Up to 200 patterns of at most 500 characters; invalid entries are skipped.
+
+### Changed
+- The Code Explorer draws the top 2,000 files by rank by default, which is also the maximum (was 600 by default, 2,000 maximum). The summary shows the ignored count when `squeze.explorer.ignore` hides files.
+- The `squeze graph --html` export draws the top 2,000 files by default and at most (was 400 and 1,500). Repositories of 400 files or fewer produce the same output as before. At 2,000 files the page is about 620 KiB and renders in about 0.35 s on synthetic graphs.
+
 ## 3.0.3 — 2026-11-15
 
 ### Added

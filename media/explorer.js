@@ -43,6 +43,7 @@
     notes: [],
     totals: { files: 0, links: 0, definitions: 0, importEdges: 0, referenceEdges: 0, subsystems: 0, cycles: 0 },
     shown: { nodes: 0, edges: 0 },
+    ignored: 0,
     bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
     nodes: [],
     edges: [],
@@ -123,7 +124,9 @@
   function describeModel(m) {
     const t = m.totals;
     const s = m.shown;
-    let text = fmt(s.nodes) + ' of ' + fmt(t.files) + ' files \u00b7 ' + fmt(s.edges) + ' of ' + fmt(t.links)
+    let text = fmt(s.nodes) + ' of ' + fmt(t.files) + ' files';
+    if (m.ignored > 0) text += ' \u00b7 ' + fmt(m.ignored) + ' ignored';
+    text += ' \u00b7 ' + fmt(s.edges) + ' of ' + fmt(t.links)
       + ' links \u00b7 ' + fmt(t.subsystems) + ' subsystems';
     if (m.partial) text += ' \u00b7 partial graph';
     return text;

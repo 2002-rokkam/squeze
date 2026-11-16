@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSource, hash, languageFor } from '../src/parser.js';
 import { buildGraph, type CodeGraph } from '../src/graph.js';
-import { buildExplorerModel, explorerOpenPath, isShownPath, type ExplorerModel } from '../src/explorer-model.js';
+import { buildExplorerModel, DEFAULT_EXPLORER_NODES, explorerOpenPath, isShownPath, MAX_EXPLORER_NODES, MAX_IGNORE_PATTERNS, MAX_IGNORE_PATTERN_LENGTH, type ExplorerModel } from '../src/explorer-model.js';
 import type { Snapshot, SourceFile } from '../src/types.js';
 
 async function snapshotFrom(files: Record<string, string>): Promise<Snapshot> {
@@ -94,6 +94,79 @@ test('buildExplorerModel: options are clamped and invalid values fall back to de
   assert.equal(buildExplorerModel(graph, { title: '   ' }).title, 'Squeze Explorer');
   assert.equal(buildExplorerModel(graph, { title: 'x'.repeat(300) }).title.length, 200);
   assert.equal(buildExplorerModel(graph, { title: '  Repo map  ' }).title, 'Repo map');
+});
+
+test('buildExplorerModel: the default size is the 2,000-file limit, and nothing hidden by default', async () => {
+  assert.equal(DEFAULT_EXPLORER_NODES, MAX_EXPLORER_NODES);
+  assert.equal(MAX_EXPLORER_NODES, 2000);
+  const { graph, model } = await modelFor(syntheticFiles(MAX_EXPLORER_NODES + 1));
+  assert.equal(model.nodes.length, MAX_EXPLORER_NODES);
+  assert.equal(model.shown.nodes, MAX_EXPLORER_NODES);
+  assert.equal(model.totals.files, MAX_EXPLORER_NODES + 1);
+  assert.equal(model.ignored, 0);
+  assert.deepEqual(model.nodes.map(node => node.path), graph.filesByRank().slice(0, MAX_EXPLORER_NODES).map(file => pathOf(graph, file)));
+});
+
+test('buildExplorerModel: ignored files are hidden before the node limit, so they do not use its slots', async () => {
+  const { graph, model } = await modelFor(syntheticFiles(40), { maxNodes: 10, ignore: ['pkg0/'] });
+  assert.equal(model.ignored, 10, 'pkg0 holds ten of the forty files');
+  assert.equal(model.totals.files, 40, 'the repository total still counts ignored files');
+  assert.equal(model.nodes.length, 10);
+  assert.ok(model.nodes.every(node => !node.path.startsWith('pkg0/')), 'no ignored file is drawn');
+  const visible = graph.filesByRank().filter(file => !pathOf(graph, file).startsWith('pkg0/'));
+  assert.deepEqual(model.nodes.map(node => node.path), visible.slice(0, 10).map(file => pathOf(graph, file)));
+  for (const edge of model.edges) assert.ok(edge.from < 10 && edge.to < 10, `edge ${edge.from}->${edge.to} leaves the shown set`);
+});
+
+test('buildExplorerModel: ignore patterns support globs and negation', async () => {
+  const { model: globbed } = await modelFor(syntheticFiles(40), { ignore: ['**/mod3*.ts'] });
+  assert.equal(globbed.ignored, 11, 'mod3 and mod30 to mod39');
+  assert.ok(globbed.nodes.every(node => !/^mod3\d*\.ts$/.test(node.name)), 'no matching file is drawn');
+
+  const { model: negated } = await modelFor(syntheticFiles(40), { ignore: ['pkg1/*.ts', '!pkg1/mod5.ts'] });
+  assert.equal(negated.ignored, 9, 'pkg1 holds ten files; mod5 is re-included');
+  assert.ok(negated.nodes.some(node => node.path === 'pkg1/mod5.ts'));
+});
+
+test('buildExplorerModel: malformed ignore entries are skipped and the valid ones still apply', async () => {
+  const patterns = [42, null, '', '   ', '# not a pattern', '*'.repeat(MAX_IGNORE_PATTERN_LENGTH + 1) + '.ts', 'pkg0/'] as unknown as string[];
+  const { model } = await modelFor(syntheticFiles(40), { ignore: patterns });
+  assert.equal(model.ignored, 10);
+});
+
+test('buildExplorerModel: an ignore pattern of exactly the length limit is kept, one character longer is dropped', async () => {
+  const atLimit = '*'.repeat(MAX_IGNORE_PATTERN_LENGTH - 3) + '.ts';
+  assert.equal(atLimit.length, MAX_IGNORE_PATTERN_LENGTH);
+  const { model: kept } = await modelFor(syntheticFiles(40), { ignore: [atLimit] });
+  assert.equal(kept.ignored, 40, 'the pattern matches every .ts file');
+  const { model: dropped } = await modelFor(syntheticFiles(40), { ignore: ['*'.repeat(MAX_IGNORE_PATTERN_LENGTH) + '.ts'] });
+  assert.equal(dropped.ignored, 0);
+});
+
+test('buildExplorerModel: only the first 200 ignore patterns apply', async () => {
+  const unmatched = Array.from({ length: MAX_IGNORE_PATTERNS }, (_, i) => `nomatch${i}/`);
+  const { model: within } = await modelFor(syntheticFiles(40), { ignore: [...unmatched.slice(0, MAX_IGNORE_PATTERNS - 1), 'pkg0/'] });
+  assert.equal(within.ignored, 10, 'the 200th pattern applies');
+  const { model: beyond } = await modelFor(syntheticFiles(40), { ignore: [...unmatched, 'pkg0/'] });
+  assert.equal(beyond.ignored, 0, 'the 201st pattern is dropped');
+});
+
+test('buildExplorerModel: a value that is not an array is ignored', async () => {
+  const { model } = await modelFor(syntheticFiles(40), { ignore: 'pkg0/' as unknown as readonly string[] });
+  assert.equal(model.ignored, 0);
+  assert.equal(model.nodes.length, 40);
+});
+
+test('buildExplorerModel: hiding every file gives an empty but valid model', async () => {
+  const { model } = await modelFor(syntheticFiles(40), { ignore: ['**'] });
+  assert.equal(model.ignored, 40);
+  assert.equal(model.totals.files, 40);
+  assert.equal(model.shown.nodes, 0);
+  assert.equal(model.shown.edges, 0);
+  assert.equal(model.nodes.length, 0);
+  assert.equal(model.edges.length, 0);
+  assert.equal(model.communities.length, 0);
+  assert.deepEqual(model.bounds, { minX: 0, minY: 0, maxX: 0, maxY: 0 });
 });
 
 test('buildExplorerModel: equal graphs give identical models', async () => {

@@ -159,7 +159,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   function modelFor(session: Session): ExplorerModel | undefined {
     if (!session.graph) return undefined;
-    if (!session.model) session.model = buildExplorerModel(session.graph, { title: session.folder.name });
+    if (!session.model) {
+      const ignore = vscode.workspace.getConfiguration('squeze', session.folder.uri).get<string[]>('explorer.ignore', []);
+      session.model = buildExplorerModel(session.graph, { title: session.folder.name, ignore });
+    }
     return session.model;
   }
 
@@ -355,6 +358,9 @@ export function activate(context: vscode.ExtensionContext) {
           void refresh(session, false);
         }
       }
+    } else if (event.affectsConfiguration('squeze.explorer.ignore')) {
+      for (const session of sessions.values()) session.model = undefined;
+      if (explorer) pushModel(explorer.session);
     }
     updateStatus();
   }));

@@ -1,3 +1,4 @@
+import ignore from 'ignore';
 import type { CodeGraph } from './graph.js';
 import { LAYOUT_HEIGHT, LAYOUT_WIDTH, communityColor, layout, ringSeeds } from './graph-layout.js';
 
@@ -7,16 +8,21 @@ import { LAYOUT_HEIGHT, LAYOUT_WIDTH, communityColor, layout, ringSeeds } from '
  * the graph, so equal graphs give equal models.
  */
 
-export const EXPLORER_MODEL_VERSION = 1;
-export const DEFAULT_EXPLORER_NODES = 600;
+export const EXPLORER_MODEL_VERSION = 2;
+/** Layout cost grows with the square of the drawn files, so the default is also the largest size allowed. */
+export const DEFAULT_EXPLORER_NODES = 2000;
 export const MAX_EXPLORER_NODES = 2000;
 export const DEFAULT_EXPLORER_EDGES = 6000;
 export const MAX_EXPLORER_EDGES = 10000;
+export const MAX_IGNORE_PATTERNS = 200;
+export const MAX_IGNORE_PATTERN_LENGTH = 500;
 
 export interface ExplorerOptions {
   maxNodes?: number;
   maxEdges?: number;
   title?: string;
+  /** Gitignore-style patterns for files to hide from the Explorer before the node limit applies. */
+  ignore?: readonly string[];
 }
 
 export interface ExplorerNode {
@@ -67,6 +73,8 @@ export interface ExplorerModel {
     cycles: number;
   };
   shown: { nodes: number; edges: number };
+  /** Files hidden by the ignore patterns. They are not drawn and do not count against the node limit. */
+  ignored: number;
   /** Extent of the node positions. The layout is not clamped, so clients fit to these bounds. */
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
   nodes: ExplorerNode[];
@@ -92,6 +100,20 @@ export function isShownPath(model: ExplorerModel, path: string): boolean {
 
 const MAX_OPEN_PATH = 1024;
 
+/**
+ * Compiles the user's ignore patterns. Entries that are not strings, blank, too long, or beyond the pattern limit are
+ * dropped, so one bad setting entry cannot stop the Explorer from opening.
+ */
+function ignoreMatcher(patterns: unknown): ((path: string) => boolean) | undefined {
+  if (!Array.isArray(patterns)) return undefined;
+  const accepted = patterns
+    .filter((pattern): pattern is string => typeof pattern === 'string' && pattern.trim().length > 0 && pattern.length <= MAX_IGNORE_PATTERN_LENGTH)
+    .slice(0, MAX_IGNORE_PATTERNS);
+  if (accepted.length === 0) return undefined;
+  const matcher = ignore().add(accepted);
+  return path => matcher.ignores(path);
+}
+
 /** Reads the path from a webview `open` message; anything else yields undefined. */
 export function explorerOpenPath(message: unknown): string | undefined {
   if (typeof message !== 'object' || message === null) return undefined;
@@ -103,7 +125,10 @@ export function explorerOpenPath(message: unknown): string | undefined {
 export function buildExplorerModel(graph: CodeGraph, options: ExplorerOptions = {}): ExplorerModel {
   const maxNodes = clampInt(options.maxNodes, 1, MAX_EXPLORER_NODES, DEFAULT_EXPLORER_NODES);
   const maxEdges = clampInt(options.maxEdges, 0, MAX_EXPLORER_EDGES, DEFAULT_EXPLORER_EDGES);
-  const shown = graph.filesByRank().slice(0, maxNodes);
+  const ranked = graph.filesByRank();
+  const isIgnored = ignoreMatcher(options.ignore);
+  const visible = isIgnored ? ranked.filter(file => !isIgnored(graph.label[file])) : ranked;
+  const shown = visible.slice(0, maxNodes);
   const index = new Map(shown.map((file, i) => [file, i]));
 
   const candidates: ExplorerEdge[] = [];
@@ -176,6 +201,7 @@ export function buildExplorerModel(graph: CodeGraph, options: ExplorerOptions = 
       cycles: graph.cycles.length,
     },
     shown: { nodes: nodes.length, edges: kept.length },
+    ignored: ranked.length - visible.length,
     bounds,
     nodes,
     edges: kept.map(edge => ({ from: edge.from, to: edge.to, imports: edge.imports, weight: round(edge.weight, 3) })),

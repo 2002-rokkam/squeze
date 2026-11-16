@@ -128,6 +128,17 @@
           "type": "boolean",
           "default": true,
           "description": "Index the workspace in the background when a trusted folder opens, and refresh the index after file changes (debounced). Turn off to index only when you run a Squeze command."
+        },
+        "squeze.explorer.ignore": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "maxItems": 200,
+          "default": [],
+          "scope": "resource",
+          "markdownDescription": "Gitignore-style patterns for files to hide from the Code Explorer, for example `vendor/`, `**/*.generated.ts` or `docs/**`. Hidden files are not drawn and do not count against the Explorer's 2,000-file limit. Squeze still indexes them, so packs and MCP results are unchanged. To remove files from Squeze entirely, list them in `.reposqueeze-v2ignore`."
         }
       }
     },

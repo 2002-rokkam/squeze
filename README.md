@@ -185,11 +185,11 @@ Details and rationale: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). A source-ve
 
 | Area | Change |
 | --- | --- |
-| Code Explorer | `Squeze: Open Code Explorer`: a searchable, interactive map of the code graph with subsystems, hubs and links. Renders under a per-render nonce CSP with no network requests. Draws the top 600 files by rank by default (2,000 maximum) with at most 6,000 edges; when files are left out the summary reads "showing top N files", and graphs built from a candidate subset are labelled "PARTIAL graph" |
+| Code Explorer | `Squeze: Open Code Explorer`: a searchable, interactive map of the code graph with subsystems, hubs and links. Renders under a per-render nonce CSP with no network requests. Draws the top 2,000 files by rank (the maximum) with at most 6,000 edges. `squeze.explorer.ignore` hides files before that limit, so hidden files do not use its slots. The summary reads "N of M files" (N drawn, M in the repository) and shows the ignored count, and graphs built from a candidate subset are labelled "partial graph" |
 | Index freshness | `squeze.autoRefresh` (on by default) and `Squeze: Refresh Index`. File changes are picked up through a debounced, single-flight refresh |
 | Token savings | `Squeze: Show Token Savings`: a local ledger of input tokens avoided by each pack call (whole-repository input minus pack output). It is an estimate from pack calls only, not billing data |
 | Reuse safety | Index reuse also checks change time and inode. Files whose newest timestamp is within 2 s of the scan are always re-read. Cache format 2: older caches are discarded once |
-| Graph command | `Squeze: Show Code Graph` now opens the Code Explorer. The `squeze graph --html` export is unchanged (byte-identical on express, gin and requests) |
+| Graph command | `Squeze: Show Code Graph` now opens the Code Explorer. The `squeze graph --html` export draws the top 2,000 files by default (it drew 400 in 3.0.x); repositories of 400 files or fewer produce the same output as before |
 | Fixes | A nested `.gitignore` that re-includes a file is honoured (checked against `git ls-files`); the MCP server reported 2.2.0 while the package was 2.2.1; a file changed between indexing and loading no longer fails `context` (the pack is rebuilt, at most three attempts); test scratch repositories moved out of the repository root |
 | Tests | `npm test` (678 tests); `npm run test:ui` (9 browser tests of the Explorer at 1440, 768 and 360 px; run `npx playwright install chromium` first); `npm run test:editor` (VS Code extension host; set `VSCODE_EXECUTABLE_PATH` to a VS Code binary) |
 | Proof | `npm run bench:proof` (public corpus at pinned commits; needs network); `node --import tsx bench/proof/run.ts local <path>` (private repository; aggregate output only) |
@@ -380,6 +380,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 | `REPOSQUEEZE_MAX_CANDIDATES` | Candidates parsed in large-repository mode (100–5,000) |
 | `--semantic-model all-minilm` | Optional local Ollama embeddings of the 300 strongest lexical candidates; sent to `127.0.0.1:11434` only |
 | `squeze.autoRefresh` (VS Code) | Index in the background when a trusted folder opens and refresh after file changes (on by default); off means indexing runs only when you use a Squeze command |
+| `squeze.explorer.ignore` (VS Code) | Gitignore-style patterns hidden from the Code Explorer, for example `vendor/` or `**/*.generated.ts` (up to 200 patterns, 500 characters each). Hidden files do not count against the 2,000-file limit. They are still indexed, so packs and MCP results do not change |
 | `.reposqueeze-v2ignore` | Extra ignore rules (gitignore syntax) |
 
 ## Security model
@@ -397,7 +398,7 @@ A many-repository robustness and adversarial suite is in [bench/robustness](benc
 - Safety limits: 100,000 files, 2 GiB indexed text, 2 MiB per file, depth 60. Exceeding one is reported in the output.
 - Token counts use `o200k_base`; provider counts differ.
 - Public non-inferiority failure: against whole-repository reading, squeze loses 3.1 points of symbol-lookup recall on the public corpus, outside the 2.0-point margin (section 0 of Evidence).
-- Explorer: the top 600 files by rank are drawn by default (2,000 maximum); the summary then reads "showing top N files". Graphs built from a candidate subset are labelled "PARTIAL graph".
+- Explorer: the top 2,000 files by rank are drawn (the maximum), because layout cost grows with the square of the drawn files. Files matched by `squeze.explorer.ignore` are hidden before that limit, so a large repository shows the top 2,000 of its remaining files; the summary reads "N of M files". Graphs built from a candidate subset are labelled "partial graph". The `squeze graph --html` export uses the same 2,000-file limit.
 - Windows: the CLI and extension are built for it, but some benchmark and chunker tests still assume `/` path separators, so the Windows CI job is informational.
 
 ## Reproduce

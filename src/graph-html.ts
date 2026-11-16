@@ -9,10 +9,12 @@ import { communityColor as color, layout, ringSeeds } from './graph-layout.js';
  */
 
 export interface HtmlOptions {
-  /** Most important files drawn (keeps the page small). */
+  /** Most important files drawn; defaults to and is capped at MAX_HTML_NODES. */
   maxNodes?: number;
   title?: string;
 }
+
+export const MAX_HTML_NODES = 2000;
 
 const WIDTH = 1200;
 const HEIGHT = 800;
@@ -33,7 +35,7 @@ svg.focus circle{opacity:.12}svg.focus line{stroke-opacity:.04}svg.focus circle.
 const sha = (text: string) => `'sha256-${createHash('sha256').update(text).digest('base64')}'`;
 
 export function renderHtml(graph: CodeGraph, options: HtmlOptions = {}): string {
-  const maxNodes = Math.max(1, Math.min(1500, options.maxNodes ?? 400));
+  const maxNodes = Math.max(1, Math.min(MAX_HTML_NODES, options.maxNodes ?? MAX_HTML_NODES));
   const shown = graph.filesByRank().slice(0, maxNodes);
   const index = new Map(shown.map((f, i) => [f, i]));
   const community = shown.map(f => graph.community[f]);
