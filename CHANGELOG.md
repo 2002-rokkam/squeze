@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.1 — 2026-11-23
+
+### Fixed
+- Copilot did not reach for Squeze on its own. The bundled skill (`skills/squeze/SKILL.md`) was never registered with VS Code; it is now contributed through `chatSkills`. The tool, MCP tool and generated instruction descriptions only said what Squeze returns, not when to use it. They now say to call `squeze_context` first, before grep, glob or broad file reads.
+
 ## 3.1.0 — 2026-11-16
 
 ### Added

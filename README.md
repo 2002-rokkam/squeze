@@ -54,7 +54,7 @@ Ask for the task, error or stack trace inside a token budget, for example `squez
 
 ### How do I use Squeze with GitHub Copilot?
 
-Install **Squeze** from the VS Code Marketplace with `code --install-extension 2002-rokkam.squeze-cli` (see [VS Code](#vs-code)). Then enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt.
+Install **Squeze** from the VS Code Marketplace with `code --install-extension 2002-rokkam.squeze-cli` (see [VS Code](#vs-code)). The extension ships a Copilot skill that asks Copilot to try `squeze_context` before grep or glob. If Copilot still searches with grep, enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt.
 
 ### Does Squeze send my code to a model or a server?
 
@@ -98,9 +98,9 @@ Search **Squeze** in the Extensions view, or install from the terminal:
 code --install-extension 2002-rokkam.squeze-cli  # VS Code Marketplace
 ```
 
-The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.1.0.vsix`) and install that file with `code --install-extension`.
+The same extension is on [Open VSX](https://open-vsx.org/extension/2002-rokkam/squeze-cli) for VSCodium and other forks. To build a VSIX from source instead, run `npm run package` (writes `releases/squeze-cli-3.1.1.vsix`) and install that file with `code --install-extension`.
 
-Enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository for retrieval-first guidance.
+If Copilot still reaches for grep, enable **Squeze Context**, **Expand** and **Map** in Copilot's tool picker, or write `#squeze` in a prompt. Run **Squeze: Install Copilot Instructions** once per repository to add an instruction file that asks Copilot to start with Squeze.
 
 The extension also provides **Squeze: Open Code Explorer** (an interactive map of the code graph), **Squeze: Refresh Index** and **Squeze: Show Token Savings**. The index refreshes after file changes when `squeze.autoRefresh` is on (the default). Above 5,000 files the default index parses a candidate subset, so the graph is marked partial; timings are in [docs/SCALE_EVALUATION.md](docs/SCALE_EVALUATION.md#incremental-refresh-on-a-real-repository).
 
@@ -351,7 +351,7 @@ The 2.1.0 profile on the 921-file repo: tokenizing the whole repository only to 
 
 ### 11. Tests and robustness
 
-`npm test` runs 687 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 687 pass on the 3.1.0 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
+`npm test` runs 689 tests (unit, property, adversarial, MCP protocol, cache corruption and concurrency, read-only checkout). All 689 pass on the 3.1.1 tree. Two tests have wall-clock limits (a 60 s MCP request timeout and a 1 s bound on 2 MiB of adversarial text) and can fail under heavy machine load, so re-run before treating a failure as a regression.
 
 A many-repository robustness and adversarial suite is in [bench/robustness](bench/robustness). Only a partial run was completed on the final build: 2 repositories (gin, requests), 32 commands, 0 crashes, 0 timeouts, 0 budget violations, 0 secret-regex hits in outputs ([report](benchmarks/v3/robustness-final.md)). That run flagged 4 of 8 repeat comparisons as non-identical while the machine load was about 50; serial re-runs of `map` on the same checkout were byte-identical 3 of 3 times and `context` cold and warm were identical on a second checkout, so the cause was not identified. The adversarial section did not finish and is **not** claimed.
 

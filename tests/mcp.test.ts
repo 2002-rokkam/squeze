@@ -24,6 +24,8 @@ test('built MCP server (default tools): handshake, discovery, context, expansion
   const client = await connect(t);
   const names = (await client.listTools()).tools.map(tool => tool.name).sort();
   assert.deepEqual(names, ['squeze_context', 'squeze_expand', 'squeze_graph', 'squeze_map']);
+  const context = (await client.listTools()).tools.find(tool => tool.name === 'squeze_context');
+  assert.match(context?.description ?? '', /before grep/);
   const pack = await client.callTool({ name: 'squeze_context', arguments: { query: 'contextPack budget', budget: 512 } });
   assert(!pack.isError);
   assert.match(JSON.stringify(pack.content), /squeze/i);

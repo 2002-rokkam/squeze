@@ -3,7 +3,7 @@
   "mcpName": "io.github.2002-rokkam/squeze",
   "displayName": "Squeze",
   "description": "Local, deterministic, token-budgeted code context for GitHub Copilot and MCP coding agents. Fewer input tokens per task: cited source excerpts and a code graph.",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "publisher": "2002-rokkam",
   "icon": "media/icon.png",
   "license": "MIT",
@@ -40,7 +40,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "bench": "node --import tsx scripts/benchmark.ts",
     "bench:fetch": "node scripts/fetch-bench.mjs",
-    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-cli-3.1.0.vsix",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o releases/squeze-cli-3.1.1.vsix",
     "prepare": "npm run build",
     "test:editor": "node scripts/test-extension.mjs",
     "test:ui": "node --import tsx --test tests/ui/*.test.ts",
@@ -142,11 +142,16 @@
         }
       }
     },
+    "chatSkills": [
+      {
+        "path": "./skills/squeze/SKILL.md"
+      }
+    ],
     "languageModelTools": [
       {
         "name": "squeze_context",
         "displayName": "Squeze Context",
-        "modelDescription": "Find the code for a task, error or question. Returns verbatim, line-cited source excerpts within a token budget. Local, read-only, not exhaustive: expand before editing.",
+        "modelDescription": "Use first for any question about this repository: where code lives, how it works, an error or stack trace, or what a task touches. Call it before grep, glob or file search. Returns verbatim, line-cited source excerpts within a token budget. Local, read-only, not exhaustive: expand before editing.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeze",
         "inputSchema": {
@@ -170,7 +175,7 @@
       {
         "name": "squeze_expand",
         "displayName": "Squeze Expand",
-        "modelDescription": "Read exact current source lines (one-based, inclusive) of one repository file.",
+        "modelDescription": "Read exact current source lines (one-based, inclusive) of one repository file. Use before editing, after squeze_context or squeze_map has located the file.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeezeRead",
         "inputSchema": {
@@ -204,7 +209,7 @@
       {
         "name": "squeze_map",
         "displayName": "Squeze Map",
-        "modelDescription": "Repository map; with path, the outline of that file; with query, definitions whose names match.",
+        "modelDescription": "Use to orient in a repository before listing or grepping directories: repository map; with path, the outline of that file; with query, definitions whose names match.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeezeMap",
         "inputSchema": {
@@ -228,7 +233,7 @@
       {
         "name": "squeze_graph",
         "displayName": "Squeze Code Graph",
-        "modelDescription": "Code graph of the repository: subsystems, dependencies, call paths, change impact. Cheaper than reading files.",
+        "modelDescription": "Use for architecture, dependency, call path or change-impact questions: code graph of the repository with subsystems, dependencies, call paths and impact. Cheaper than reading files or grepping for callers.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "squeezeGraph",
         "inputSchema": {

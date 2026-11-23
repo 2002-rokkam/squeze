@@ -16,7 +16,7 @@ export interface ServeOptions {
   features?: string;
 }
 
-export const VERSION = '3.1.0';
+export const VERSION = '3.1.1';
 
 export async function serve(root: string, options: ServeOptions | string = {}) {
   const { semanticModel, tools = 'core', features } = typeof options === 'string' ? { semanticModel: options } : options;
@@ -31,7 +31,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
   server.registerTool(
     'squeze_context',
     {
-      description: 'Find the code for a task, error or question. Returns verbatim, line-cited source excerpts within a token budget. Local, read-only, not exhaustive: expand before editing.',
+      description: 'Use first for any question about this repository: where code lives, how it works, an error or stack trace, or what a task touches. Call it before grep, glob or file search. Returns verbatim, line-cited source excerpts within a token budget. Local, read-only, not exhaustive: expand before editing.',
       inputSchema: {
         query: z.string(),
         budget,
@@ -44,7 +44,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
   server.registerTool(
     'squeze_expand',
     {
-      description: 'Read exact current source lines (one-based, inclusive) of one repository file.',
+      description: 'Read exact current source lines (one-based, inclusive) of one repository file. Use before editing, after squeze_context or squeze_map has located the file.',
       inputSchema: { path: z.string(), start: z.number(), end: z.number(), budget },
       annotations,
     },
@@ -53,7 +53,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
   server.registerTool(
     'squeze_map',
     {
-      description: 'Repository map; with path, the outline of that file; with query, definitions whose names match.',
+      description: 'Use to orient in a repository before listing or grepping directories: repository map; with path, the outline of that file; with query, definitions whose names match.',
       inputSchema: { budget, path: z.string().optional(), query: z.string().optional() },
       annotations,
     },
@@ -72,7 +72,7 @@ export async function serve(root: string, options: ServeOptions | string = {}) {
   server.registerTool(
     'squeze_graph',
     {
-      description: 'Code graph of the repository: subsystems, dependencies, call paths, change impact. Cheaper than reading files.',
+      description: 'Use for architecture, dependency, call path or change-impact questions: code graph of the repository with subsystems, dependencies, call paths and impact. Cheaper than reading files or grepping for callers.',
       inputSchema: {
         mode: z.enum(['overview', 'neighbors', 'path', 'impact', 'mermaid']).optional().describe('Default overview.'),
         target: z.string().optional().describe('File, path suffix or symbol.'),
